@@ -34,7 +34,7 @@ export default function AddDieForm() {
 
     try {
       const response = await fetch(
-        "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/add_die",
+        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/add_die",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
