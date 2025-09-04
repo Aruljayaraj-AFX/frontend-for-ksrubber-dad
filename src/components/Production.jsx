@@ -1,0 +1,307 @@
+import { useEffect, useState } from "react";
+import Select from "react-select";
+import "./Production.css";
+
+export default function DieTable() {
+  const [dies, setDies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedDies, setSelectedDies] = useState([]);
+  const [productionCounts, setProductionCounts] = useState({});
+  const [result, setResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [monthIncome, setMonthIncome] = useState(null);
+  const [incomeFallback, setIncomeFallback] = useState(false);
+  const [canSubmit, setCanSubmit] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState(null); // ✅ for success/error message
+
+  useEffect(() => {
+    const fetchDies = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/afx/pro_ksrubber/v1/get_all_die"
+        );
+        if (!response.ok) throw new Error("Failed to fetch dies");
+        const data = await response.json();
+        if (data.status === "success") setDies(data.data);
+        else setError("API returned error");
+      } catch (err) {
+        console.error(err);
+        setError("Error fetching data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDies();
+  }, []);
+
+  const options = dies.map((die) => ({
+    value: die.DieId,
+    label: die.DieName,
+  }));
+
+  const handleProductionChange = (dieId, value) => {
+    setProductionCounts((prev) => ({
+      ...prev,
+      [dieId]: value,
+    }));
+    setCanSubmit(false);
+    setSubmitMessage(null); // reset old message
+  };
+
+  const handleDateChange = (val) => {
+    setSelectedDate(val);
+    setCanSubmit(false);
+    setSubmitMessage(null);
+  };
+
+  const handleDieSelection = (selected) => {
+    setSelectedDies(selected.map((s) => s.value));
+    setCanSubmit(false);
+    setSubmitMessage(null);
+  };
+
+  const getPayload = () => {
+    const die_ids = selectedDies;
+    const counts = selectedDies.map((id) => Number(productionCounts[id] || 0));
+    return { die_ids, production_counts: counts };
+  };
+
+  const handleCompute = async () => {
+    if (!selectedDate) {
+      alert("Please select a date first!");
+      return;
+    }
+
+    const payload = getPayload();
+    setSubmitting(true);
+    setSubmitMessage(null);
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await res.json();
+
+      if (data.status === "success") {
+        setResult(data);
+
+        const [year, month] = selectedDate.split("-");
+        try {
+          const incomeRes = await fetch(
+            `http://127.0.0.1:8000/afx/pro_ksrubber/v1/get_month_income/?year=${year}&month=${month}`
+          );
+          const incomeData = await incomeRes.json();
+
+          if (incomeData.status === "success") {
+            setMonthIncome(incomeData.data.income);
+            setIncomeFallback(false);
+          } else {
+            setMonthIncome(13000);
+            setIncomeFallback(true);
+          }
+        } catch (err) {
+          console.error("Income fetch failed:", err);
+          setMonthIncome(13000);
+          setIncomeFallback(true);
+        }
+
+        setCanSubmit(true);
+      } else {
+        alert("Failed: " + JSON.stringify(data));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error computing production");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const payload = {
+      DieIds: selectedDies,
+      ProductionCounts: selectedDies.map((id) =>
+        Number(productionCounts[id] || 0)
+      ),
+      date: selectedDate,
+    };
+
+    try {
+      const res = await fetch(
+        "http://127.0.0.1:8000/afx/pro_ksrubber/v1/calculate_production_hours",
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await res.json();
+
+      if (data.status === "success") {
+        setSubmitMessage({
+          type: "success",
+          text: `✅ Successfully submitted! Updated income: ₹${data.updated_income}`,
+        });
+      } else {
+        setSubmitMessage({
+          type: "error",
+          text: `❌ Error: ${data.message || "Unknown error"}`,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setSubmitMessage({
+        type: "error",
+        text: "❌ Submit failed",
+      });
+    }
+  };
+
+  if (loading) return <p className="info-text">Loading dies...</p>;
+  if (error) return <p className="info-text error">{error}</p>;
+
+  const monthlyPay = Number(result?.new_daily_pro?.monthy_pay || 0);
+  const monthlyIncomeNum = Number(monthIncome || 0);
+  const netTotal = monthlyPay + monthlyIncomeNum;
+
+  return (
+    <div className="container">
+      <div className="form-card table-card">
+        <h2 className="form-title">All Dies</h2>
+
+        {/* Date Input */}
+        <div className="form-group date-group">
+          <label>Select Date</label>
+          <input
+            type="date"
+            className="date-input"
+            value={selectedDate}
+            onChange={(e) => handleDateChange(e.target.value)}
+          />
+        </div>
+
+        {/* Multi-select dropdown */}
+        <div className="form-group">
+          <label>Select Multiple Dies</label>
+          <Select
+            isMulti
+            options={options}
+            value={options.filter((opt) => selectedDies.includes(opt.value))}
+            onChange={handleDieSelection}
+          />
+        </div>
+
+        {/* Selected dies input */}
+        {selectedDies.length > 0 && (
+          <div className="selected-dies">
+            <h4>Production Counts</h4>
+            {selectedDies.map((id) => {
+              const die = dies.find((d) => d.DieId === id);
+              return (
+                <div key={id} className="production-input">
+                  <label>{die?.DieName || id}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Enter production count"
+                    value={productionCounts[id] || ""}
+                    onChange={(e) => handleProductionChange(id, e.target.value)}
+                  />
+                </div>
+              );
+            })}
+
+            <button
+              className="submit-btn"
+              onClick={handleCompute}
+              disabled={submitting}
+            >
+              {submitting ? "Computing..." : "Compute"}
+            </button>
+          </div>
+        )}
+
+        {/* Results Section */}
+        {result && (
+          <div className="results-box">
+            <h4>Production Results ({result.new_daily_pro.date})</h4>
+            {result.details.map((d, i) => (
+              <div key={d.DieId} className="result-row">
+                <strong>{d.DieName}</strong>
+                <div>
+                  Overall Time: {result.new_daily_pro.overall_time[i]} hrs
+                </div>
+                <div>
+                  Overtime: {result.new_daily_pro.overtime[i]} hrs{" "}
+                  {result.new_daily_pro.delete_index_hr &&
+                    result.new_daily_pro.delete_index_hr[i] > 0 && (
+                      <span className="delete-hr">
+                        -{result.new_daily_pro.delete_index_hr[i]} hrs
+                      </span>
+                    )}
+                </div>
+                <div>Price: ₹{result.new_daily_pro.price[i]}</div>
+              </div>
+            ))}
+
+            <div className="final-summary">
+              <strong>Overtime Pay:</strong> ₹{monthlyPay}
+            </div>
+
+            <div className="final-summary">
+              <strong>Income:</strong> ₹{monthlyIncomeNum}{" "}
+              {incomeFallback && <span className="fallback">(fixed)</span>}
+            </div>
+
+            <div className="final-summary net-total">
+              <strong>Total Income:</strong>{" "}
+              <span className={netTotal >= 0 ? "positive" : "negative"}>
+                {netTotal >= 0
+                  ? `₹${netTotal.toLocaleString("en-IN", {
+                      maximumFractionDigits: 2,
+                    })}`
+                  : `-₹${Math.abs(netTotal).toLocaleString("en-IN", {
+                      maximumFractionDigits: 2,
+                    })}`}
+              </span>
+            </div>
+
+            <button
+              className="submit-btn"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+            >
+              Submit
+            </button>
+
+            {/* ✅ Show message below button */}
+            {submitMessage && (
+              <p
+                className={
+                  submitMessage.type === "success"
+                    ? "success-message"
+                    : "error-message"
+                }
+              >
+                {submitMessage.text}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

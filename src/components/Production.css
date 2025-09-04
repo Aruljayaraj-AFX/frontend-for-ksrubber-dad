@@ -1,0 +1,287 @@
+/* Container */
+.container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Card look */
+.form-card.table-card {
+  background: #fff;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 500px;   /* instead of fixed width */
+  box-sizing: border-box;
+}
+
+/* Title */
+.form-title {
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #333;
+  text-align: center;
+}
+
+/* Form group */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+/* Info/error messages */
+.info-text {
+  text-align: center;
+  color: #555;
+  font-size: 14px;
+}
+.info-text.error {
+  color: #d9534f;
+}
+
+/* === Selected Dies Section === */
+.selected-dies {
+  margin-top: 25px;
+  padding: 15px;
+  background: #fefefe;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+}
+
+.selected-dies h4 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+/* Each die row */
+.production-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafafa;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+  transition: background 0.2s, box-shadow 0.2s;
+  gap: 10px; /* keeps spacing on wrap */
+}
+
+.production-input:hover {
+  background: #f3f8ff;
+  box-shadow: 0 2px 6px rgba(91, 141, 239, 0.15);
+}
+
+/* Die label */
+.production-input label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  margin-right: 12px;
+  word-break: break-word;
+}
+
+/* Count input */
+.production-input input {
+  width: 180px;
+  max-width: 50%; /* shrink gracefully */
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.production-input input:focus {
+  border-color: #5b8def;
+  box-shadow: 0 0 5px rgba(91, 141, 239, 0.4);
+}
+
+/* === Responsive tweaks === */
+@media (max-width: 600px) {
+  .form-card.table-card {
+    padding: 15px 18px;
+  }
+
+  .form-title {
+    font-size: 18px;
+  }
+
+  .production-input {
+    flex-direction: column; /* stack vertically */
+    align-items: flex-start;
+  }
+
+  .production-input input {
+    width: 100%; /* full width input on mobile */
+    max-width: 100%;
+    margin-top: 8px;
+  }
+}
+/* Results Box */
+.results-box {
+  margin-top: 25px;
+  padding: 18px;
+  background: #f9fbff;
+  border: 1px solid #dce6ff;
+  border-radius: 12px;
+}
+
+.results-box h4 {
+  font-size: 17px;
+  margin-bottom: 12px;
+  color: #2c3e50;
+}
+
+.result-row {
+  background: #fafafa;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.result-row strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.delete-hr {
+  color: #d9534f;  /* red */
+  font-weight: bold;
+  margin-left: 6px;
+}
+
+
+.final-summary {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 2px solid #ccc;
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.submit-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  background: #5b8def;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submit-btn:hover {
+  background: #4570d4;
+}
+/* === Date Input === */
+.date-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s;
+  background: #fff;
+  color: #333;
+}
+
+.date-input:focus {
+  border-color: #5b8def;
+  box-shadow: 0 0 5px rgba(91, 141, 239, 0.4);
+}
+
+.form-group.date-group .date-input[type="date"] {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s;
+  background: #fff;
+  color: #333;
+  appearance: none;       /* removes default browser chrome */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  box-sizing: border-box;
+}
+
+.form-group.date-group .date-input[type="date"]:focus {
+  border-color: #5b8def;
+  box-shadow: 0 0 5px rgba(91, 141, 239, 0.4);
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .date-input {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+.date-input::-webkit-calendar-picker-indicator {
+  color: #5b8def;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.net-total .positive {
+  color: green;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.positive {
+  color: green;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.negative {
+  color: red;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.fallback {
+  color: #888;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.success-message {
+  color: green;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+  font-weight: 600;
+}
