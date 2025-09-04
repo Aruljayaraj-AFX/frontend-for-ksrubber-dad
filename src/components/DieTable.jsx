@@ -17,7 +17,7 @@ export default function DieTable() {
     const fetchDies = async () => {
       try {
         const response = await fetch(
-          "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
         );
         if (!response.ok) throw new Error("Failed to fetch dies");
         const data = await response.json();
@@ -47,7 +47,7 @@ export default function DieTable() {
 
   try {
     const response = await fetch(
-      `https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/edit_die/${selectedDie.DieId}`,
+      `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/edit_die/${selectedDie.DieId}`,
       {
         method: "PUT",
         headers: {
@@ -103,7 +103,7 @@ export default function DieTable() {
     if (!window.confirm("Are you sure you want to delete this die?")) return;
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/afx/pro_ksrubber/v1/delete_die/${dieId}`,
+        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/delete_die/${dieId}`,
         { method: "DELETE" }
       );
       if (!response.ok) throw new Error("Failed to delete die");
