@@ -14,7 +14,7 @@ export default function DailyProductionTable() {
       try {
         // Fetch die list
         const dieRes = await fetch(
-          "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
         );
         if (dieRes.ok) {
           const dieData = await dieRes.json();
@@ -23,7 +23,7 @@ export default function DailyProductionTable() {
 
         // Fetch productions
         const prodRes = await fetch(
-          "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/daily-production/"
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
         );
         if (!prodRes.ok) throw new Error("Failed to fetch daily production");
         const prodData = await prodRes.json();
@@ -51,7 +51,7 @@ export default function DailyProductionTable() {
 
     try {
       const response = await fetch(
-        `https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/delete_production/${sno}`,
+        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/delete_production/${sno}`,
         { method: "DELETE" }
       );
       const data = await response.json();
