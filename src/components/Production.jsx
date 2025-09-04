@@ -20,7 +20,7 @@ export default function DieTable() {
     const fetchDies = async () => {
       try {
         const response = await fetch(
-          "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
         );
         if (!response.ok) throw new Error("Failed to fetch dies");
         const data = await response.json();
@@ -80,7 +80,7 @@ export default function DieTable() {
 
     try {
       const res = await fetch(
-        `https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}`,
+        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}`,
         {
           method: "POST",
           headers: {
@@ -98,7 +98,7 @@ export default function DieTable() {
         const [year, month] = selectedDate.split("-");
         try {
           const incomeRes = await fetch(
-            `https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/get_month_income/?year=${year}&month=${month}`
+            `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_month_income/?year=${year}&month=${month}`
           );
           const incomeData = await incomeRes.json();
 
@@ -138,7 +138,7 @@ export default function DieTable() {
 
     try {
       const res = await fetch(
-        "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/calculate_production_hours",
+        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/calculate_production_hours",
         {
           method: "POST",
           headers: {
