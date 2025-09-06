@@ -184,7 +184,7 @@ export default function DieTable() {
         setSubmitMessage(null);
         resetForm();
         window.scrollTo({ top: 0, behavior: "smooth" }); // optional scroll up
-      }, 2000);
+      }, 500);
     }
   };
 
