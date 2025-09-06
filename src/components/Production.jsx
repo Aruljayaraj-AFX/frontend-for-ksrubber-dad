@@ -136,7 +136,6 @@ export default function DieTable() {
     }
   };
 
-  // ✅ reset form function
   const resetForm = () => {
     setSelectedDies([]);
     setProductionCounts({});
@@ -144,7 +143,6 @@ export default function DieTable() {
     setMonthIncome(null);
     setIncomeFallback(false);
     setCanSubmit(false);
-    // keep selectedDate if user chose one, else default to today
     setSelectedDate((prev) => prev || getTodayDate());
   };
 
@@ -189,7 +187,6 @@ export default function DieTable() {
         text: "❌ Submit failed",
       });
     } finally {
-      // ✅ Auto clear after 2 sec and reset form
       setTimeout(() => {
         setSubmitMessage(null);
         resetForm();
@@ -246,7 +243,9 @@ export default function DieTable() {
                     min="0"
                     placeholder="Enter production count"
                     value={productionCounts[id] || ""}
-                    onChange={(e) => handleProductionChange(id, e.target.value)}
+                    onChange={(e) =>
+                      handleProductionChange(id, e.target.value)
+                    }
                   />
                 </div>
               );
@@ -266,24 +265,29 @@ export default function DieTable() {
         {result && (
           <div className="results-box">
             <h4>Production Results ({result.new_daily_pro.date})</h4>
-            {result.details.map((d, i) => (
-              <div key={d.DieId} className="result-row">
-                <strong>{d.DieName}</strong>
-                <div>
-                  Overall Time: {result.new_daily_pro.overall_time[i]} hrs
+            {result.details.map((d, i) => {
+              const dieObj = dies.find((die) => die.DieId === d.DieId);
+              return (
+                <div key={d.DieId} className="result-row">
+                  <strong>{d.DieName}</strong>
+                  <div>Overall Time: {result.new_daily_pro.overall_time[i]} hrs</div>
+                  <div>
+                    Overtime: {result.new_daily_pro.overtime[i]} hrs{" "}
+                    {result.new_daily_pro.delete_index_hr &&
+                      result.new_daily_pro.delete_index_hr[i] > 0 && (
+                        <span className="delete-hr">
+                          -{result.new_daily_pro.delete_index_hr[i]} hrs
+                        </span>
+                      )}
+                  </div>
+                  <div>Price: ₹{result.new_daily_pro.price[i]}</div>
+                  <div>
+                    <strong>Production Hr/Unit:</strong>{" "}
+                    {dieObj?.Pro_hr_count || 0} hrs/unit
+                  </div>
                 </div>
-                <div>
-                  Overtime: {result.new_daily_pro.overtime[i]} hrs{" "}
-                  {result.new_daily_pro.delete_index_hr &&
-                    result.new_daily_pro.delete_index_hr[i] > 0 && (
-                      <span className="delete-hr">
-                        -{result.new_daily_pro.delete_index_hr[i]} hrs
-                      </span>
-                    )}
-                </div>
-                <div>Price: ₹{result.new_daily_pro.price[i]}</div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="final-summary">
               <strong>Overtime Pay:</strong> ₹{monthlyPay}
@@ -298,9 +302,7 @@ export default function DieTable() {
               <strong>Total Income:</strong>{" "}
               <span className={netTotal >= 0 ? "positive" : "negative"}>
                 {netTotal >= 0
-                  ? `₹${netTotal.toLocaleString("en-IN", {
-                      maximumFractionDigits: 2,
-                    })}`
+                  ? `₹${netTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
                   : `-₹${Math.abs(netTotal).toLocaleString("en-IN", {
                       maximumFractionDigits: 2,
                     })}`}
