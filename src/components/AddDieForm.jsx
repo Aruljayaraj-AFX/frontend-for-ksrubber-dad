@@ -115,34 +115,32 @@ export default function AddDieForm() {
               required
             />
           </div>
-
-          {/* Company Name (Dropdown + custom entry) */}
+          {/* Other Fields */}
           <div className="form-group">
-            <label htmlFor="company">Company Name</label>
-            <select
-              id="company"
-              name="company"
-              value={form.company}
+            <label htmlFor="cavity">Cavity</label>
+            <input
+              id="cavity"
+              type="number"
+              name="cavity"
+              value={form.cavity}
               onChange={handleChange}
+              placeholder="e.g. 4"
               required
-            >
-              <option value="">-- Select Company --</option>
-              {companies.map((c, i) => (
-                <option key={i} value={c}>
-                  {c}
-                </option>
-              ))}
-              <option value="__custom__">Other (Type manually)</option>
-            </select>
+            />
+          </div>
 
-            {/* Show text input if "Other" is chosen */}
-            {form.company === "__custom__" && (
-              <input
-                type="text"
-                placeholder="Enter new company"
-                onChange={(e) => setForm({ ...form, company: e.target.value })}
-              />
-            )}
+            
+          <div className="form-group">
+            <label htmlFor="weight">Weight (kg)</label>
+            <input
+              id="weight"
+              type="number"
+              step="0.01"
+              name="weight"
+              value={form.weight}
+              onChange={handleChange}
+              placeholder="Enter weight"
+            />
           </div>
 
           {/* Material Name (Dropdown + custom entry) */}
@@ -175,31 +173,34 @@ export default function AddDieForm() {
             )}
           </div>
 
-          {/* Other Fields */}
-          <div className="form-group">
-            <label htmlFor="cavity">Cavity</label>
-            <input
-              id="cavity"
-              type="number"
-              name="cavity"
-              value={form.cavity}
-              onChange={handleChange}
-              placeholder="e.g. 4"
-              required
-            />
-          </div>
 
+          {/* Company Name (Dropdown + custom entry) */}
           <div className="form-group">
-            <label htmlFor="weight">Weight (kg)</label>
-            <input
-              id="weight"
-              type="number"
-              step="0.01"
-              name="weight"
-              value={form.weight}
+            <label htmlFor="company">Company Name</label>
+            <select
+              id="company"
+              name="company"
+              value={form.company}
               onChange={handleChange}
-              placeholder="Enter weight"
-            />
+              required
+            >
+              <option value="">-- Select Company --</option>
+              {companies.map((c, i) => (
+                <option key={i} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value="__custom__">Other (Type manually)</option>
+            </select>
+
+            {/* Show text input if "Other" is chosen */}
+            {form.company === "__custom__" && (
+              <input
+                type="text"
+                placeholder="Enter new company"
+                onChange={(e) => setForm({ ...form, company: e.target.value })}
+              />
+            )}
           </div>
 
           <div className="form-group">
