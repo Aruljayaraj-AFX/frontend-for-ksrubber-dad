@@ -14,7 +14,7 @@ export default function DieTable() {
   const [monthIncome, setMonthIncome] = useState(null);
   const [incomeFallback, setIncomeFallback] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState(null); // ✅ for success/error message
+  const [submitMessage, setSubmitMessage] = useState(null);
 
   useEffect(() => {
     const fetchDies = async () => {
@@ -47,7 +47,7 @@ export default function DieTable() {
       [dieId]: value,
     }));
     setCanSubmit(false);
-    setSubmitMessage(null); // reset old message
+    setSubmitMessage(null);
   };
 
   const handleDateChange = (val) => {
@@ -127,6 +127,17 @@ export default function DieTable() {
     }
   };
 
+  // ✅ reset form function
+  const resetForm = () => {
+    setSelectedDies([]);
+    setProductionCounts({});
+    setResult(null);
+    setSelectedDate("");
+    setMonthIncome(null);
+    setIncomeFallback(false);
+    setCanSubmit(false);
+  };
+
   const handleSubmit = async () => {
     const payload = {
       DieIds: selectedDies,
@@ -167,6 +178,12 @@ export default function DieTable() {
         type: "error",
         text: "❌ Submit failed",
       });
+    } finally {
+      // ✅ Auto clear after 5 sec and reset form
+      setTimeout(() => {
+        setSubmitMessage(null);
+        resetForm();
+      }, 5000);
     }
   };
 
