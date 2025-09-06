@@ -8,11 +8,14 @@ export default function DailyProductionTable() {
   const [error, setError] = useState("");
   const [selectedProduction, setSelectedProduction] = useState(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+
   // Fetch productions + dies
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch die list
         const dieRes = await fetch(
           "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
         );
@@ -21,7 +24,6 @@ export default function DailyProductionTable() {
           if (dieData.status === "success") setDies(dieData.data);
         }
 
-        // Fetch productions
         const prodRes = await fetch(
           "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
         );
@@ -45,7 +47,7 @@ export default function DailyProductionTable() {
     return found ? found.DieName : id;
   };
 
-  // ✅ Delete by sno
+  // Delete by sno
   const handleDelete = async (sno) => {
     if (!window.confirm("Are you sure you want to delete this record?")) return;
 
@@ -67,6 +69,51 @@ export default function DailyProductionTable() {
     }
   };
 
+  // 🔎 Filtering logic
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const currentYear = new Date().getFullYear().toString(); // YYYY
+
+  const filteredProductions = productions.filter((prod) => {
+    const prodMonth = prod.date.slice(0, 7); // YYYY-MM
+    const prodYear = prod.date.slice(0, 4); // YYYY
+
+    // Check month filter
+    if (selectedMonth) {
+      return prodMonth === selectedMonth;
+    }
+
+    // Check year filter
+    if (selectedYear) {
+      return prodYear === selectedYear;
+    }
+
+    // Default → current month
+    return prodMonth === currentMonth;
+  }).filter((prod) => {
+    // Check search filter
+    return (
+      searchTerm.trim() === "" ||
+      prod.DieId.some((id) =>
+        getDieName(id).toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  });
+
+  // 📊 Summary calculation
+  const totalOvertime = filteredProductions.reduce((sum, prod) => {
+    return (
+      sum +
+      prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
+    );
+  }, 0);
+
+  const totalMonthyPay = filteredProductions.reduce(
+    (sum, prod) => sum + (parseFloat(prod.monthy_pay) || 0),
+    0
+  );
+
+  const finalPay = totalMonthyPay + 13000;
+
   if (loading) return <p>Loading daily production...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
@@ -74,6 +121,38 @@ export default function DailyProductionTable() {
     <div className="container">
       <div className="form-card table-card">
         <h2 className="form-title">Daily Production</h2>
+
+        {/* 🔎 Search & Filters */}
+        <div className="filter-bar">
+          <input
+            type="text"
+            placeholder="Search by Die Name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => {
+              setSelectedMonth(e.target.value);
+              setSelectedYear(""); // reset year when picking month
+            }}
+            className="month-input"
+          />
+
+          <input
+            type="number"
+            placeholder="Year (YYYY)"
+            value={selectedYear}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              setSelectedMonth(""); // reset month when picking year
+            }}
+            className="year-input"
+          />
+        </div>
 
         <div className="table-responsive">
           <table className="die-table">
@@ -89,14 +168,14 @@ export default function DailyProductionTable() {
               </tr>
             </thead>
             <tbody>
-              {productions.length === 0 ? (
+              {filteredProductions.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: "center" }}>
                     No production records found.
                   </td>
                 </tr>
               ) : (
-                productions.map((prod) => (
+                filteredProductions.map((prod) => (
                   <tr
                     key={prod.sno}
                     onClick={() => setSelectedProduction(prod)}
@@ -144,6 +223,21 @@ export default function DailyProductionTable() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* 📊 Summary */}
+        <div className="summary-card">
+          <h3>
+            Summary for{" "}
+            {selectedMonth
+              ? selectedMonth
+              : selectedYear
+              ? selectedYear
+              : currentMonth}
+          </h3>
+          <p>Total Overtime: <b>{totalOvertime}</b></p>
+          <p>Total Monthly Pay: <b>{totalMonthyPay}</b></p>
+          <p>Final Pay (+13,000): <b>{finalPay}</b></p>
         </div>
       </div>
 

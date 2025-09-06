@@ -398,3 +398,82 @@
     padding: 12px;
   }
 }
+
+
+/* 🔎 Filter Bar */
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.search-input,
+.month-input,
+.year-input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus,
+.month-input:focus,
+.year-input:focus {
+  border-color: #007bff;
+}
+
+/* 📊 Summary Card */
+.summary-card {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f9fafb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.summary-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.summary-card p {
+  margin: 6px 0;
+  font-size: 15px;
+  color: #444;
+}
+
+.summary-card b {
+  color: #007bff;
+}
+
+/* 📋 Table Adjustments */
+.table-responsive {
+  margin-top: 15px;
+}
+
+.die-table th {
+  background: #007bff;
+  color: white;
+  padding: 10px;
+}
+
+.die-table td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.cell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cell-list li {
+  margin: 2px 0;
+}
