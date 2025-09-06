@@ -12,11 +12,12 @@ export default function AddDieForm() {
     price: "",
   });
 
-  const [companies, setCompanies] = useState([]);   // unique companies
-  const [materials, setMaterials] = useState([]);   // unique materials
+  const [companies, setCompanies] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [customCompany, setCustomCompany] = useState("");  // 🔹 separate custom input
+  const [customMaterial, setCustomMaterial] = useState(""); // 🔹 separate custom input
   const [message, setMessage] = useState("");
 
-  // 🔹 Fetch dies to get unique company + material names
   useEffect(() => {
     const fetchDies = async () => {
       try {
@@ -28,15 +29,12 @@ export default function AddDieForm() {
 
         if (data.status === "success") {
           const dies = data.data;
-
-          // extract unique company + material names
           const uniqueCompanies = [
             ...new Set(dies.map((d) => d.CompanyName).filter(Boolean)),
           ];
           const uniqueMaterials = [
             ...new Set(dies.map((d) => d.Materials).filter(Boolean)),
           ];
-
           setCompanies(uniqueCompanies);
           setMaterials(uniqueMaterials);
         }
@@ -58,8 +56,8 @@ export default function AddDieForm() {
 
     const payload = {
       DieName: form.name,
-      CompanyName: form.company,
-      Materials: form.material,
+      CompanyName: form.company === "__custom__" ? customCompany : form.company,
+      Materials: form.material === "__custom__" ? customMaterial : form.material,
       Cavity: Number(form.cavity),
       Weight: Number(form.weight),
       Pro_hr_count: Number(form.productionPerHour),
@@ -91,6 +89,13 @@ export default function AddDieForm() {
         productionPerHour: "",
         price: "",
       });
+      setCustomCompany("");
+      setCustomMaterial("");
+
+      setTimeout(() => {
+        setMessage("");
+        window.location.reload();
+      }, 20000);
     } catch (error) {
       console.error(error);
       setMessage("❌ Error adding die. Please try again.");
@@ -115,7 +120,8 @@ export default function AddDieForm() {
               required
             />
           </div>
-          {/* Other Fields */}
+
+          {/* Cavity */}
           <div className="form-group">
             <label htmlFor="cavity">Cavity</label>
             <input
@@ -129,7 +135,7 @@ export default function AddDieForm() {
             />
           </div>
 
-            
+          {/* Weight */}
           <div className="form-group">
             <label htmlFor="weight">Weight (kg)</label>
             <input
@@ -143,7 +149,7 @@ export default function AddDieForm() {
             />
           </div>
 
-          {/* Material Name (Dropdown + custom entry) */}
+          {/* Material Name */}
           <div className="form-group">
             <label htmlFor="material">Material Name</label>
             <select
@@ -166,15 +172,14 @@ export default function AddDieForm() {
               <input
                 type="text"
                 placeholder="Enter new material"
-                onChange={(e) =>
-                  setForm({ ...form, material: e.target.value })
-                }
+                value={customMaterial}
+                onChange={(e) => setCustomMaterial(e.target.value)}
+                required
               />
             )}
           </div>
 
-
-          {/* Company Name (Dropdown + custom entry) */}
+          {/* Company Name */}
           <div className="form-group">
             <label htmlFor="company">Company Name</label>
             <select
@@ -193,16 +198,18 @@ export default function AddDieForm() {
               <option value="__custom__">Other (Type manually)</option>
             </select>
 
-            {/* Show text input if "Other" is chosen */}
             {form.company === "__custom__" && (
               <input
                 type="text"
                 placeholder="Enter new company"
-                onChange={(e) => setForm({ ...form, company: e.target.value })}
+                value={customCompany}
+                onChange={(e) => setCustomCompany(e.target.value)}
+                required
               />
             )}
           </div>
 
+          {/* Production per Hour */}
           <div className="form-group">
             <label htmlFor="productionPerHour">Production per Hour</label>
             <input
@@ -216,6 +223,7 @@ export default function AddDieForm() {
             />
           </div>
 
+          {/* Price */}
           <div className="form-group">
             <label htmlFor="price">Price per Unit</label>
             <input
