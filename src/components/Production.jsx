@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import Select from "react-select";
 import "./Production.css";
 
+// Helper to get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function DieTable() {
   const [dies, setDies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +19,7 @@ export default function DieTable() {
   const [productionCounts, setProductionCounts] = useState({});
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [monthIncome, setMonthIncome] = useState(null);
   const [incomeFallback, setIncomeFallback] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
@@ -132,10 +141,11 @@ export default function DieTable() {
     setSelectedDies([]);
     setProductionCounts({});
     setResult(null);
-    setSelectedDate("");
     setMonthIncome(null);
     setIncomeFallback(false);
     setCanSubmit(false);
+    // keep selectedDate if user chose one, else default to today
+    setSelectedDate((prev) => prev || getTodayDate());
   };
 
   const handleSubmit = async () => {
@@ -183,8 +193,8 @@ export default function DieTable() {
       setTimeout(() => {
         setSubmitMessage(null);
         resetForm();
-        window.scrollTo({ top: 0, behavior: "smooth" }); // optional scroll up
-      }, 500);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 2000);
     }
   };
 
@@ -305,7 +315,6 @@ export default function DieTable() {
               Submit
             </button>
 
-            {/* ✅ Show message below button */}
             {submitMessage && (
               <p
                 className={
