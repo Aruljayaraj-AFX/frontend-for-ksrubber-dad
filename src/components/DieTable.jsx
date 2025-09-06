@@ -142,10 +142,10 @@ export default function DieTable() {
             <thead>
               <tr>
                 <th>Die Name</th>
-                <th>Company</th>
-                <th>Material</th>
                 <th>Cavity</th>
                 <th>Weight (kg)</th>
+                <th>Company</th>
+                <th>Material</th>
                 <th>Production/hr</th>
                 <th>Price/unit</th>
               </tr>
