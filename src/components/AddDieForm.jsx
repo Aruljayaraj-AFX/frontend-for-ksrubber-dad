@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./AddDieForm.css";
 
 export default function AddDieForm() {
@@ -12,7 +12,41 @@ export default function AddDieForm() {
     price: "",
   });
 
-  const [message, setMessage] = useState(""); // feedback message
+  const [companies, setCompanies] = useState([]);   // unique companies
+  const [materials, setMaterials] = useState([]);   // unique materials
+  const [message, setMessage] = useState("");
+
+  // 🔹 Fetch dies to get unique company + material names
+  useEffect(() => {
+    const fetchDies = async () => {
+      try {
+        const response = await fetch(
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+        );
+        if (!response.ok) throw new Error("Failed to fetch dies");
+        const data = await response.json();
+
+        if (data.status === "success") {
+          const dies = data.data;
+
+          // extract unique company + material names
+          const uniqueCompanies = [
+            ...new Set(dies.map((d) => d.CompanyName).filter(Boolean)),
+          ];
+          const uniqueMaterials = [
+            ...new Set(dies.map((d) => d.Materials).filter(Boolean)),
+          ];
+
+          setCompanies(uniqueCompanies);
+          setMaterials(uniqueMaterials);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchDies();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,15 +76,11 @@ export default function AddDieForm() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to add die");
-      }
+      if (!response.ok) throw new Error("Failed to add die");
 
       const data = await response.json();
-      console.log("API response:", data);
+      setMessage(`✅ Successfully Added! Die ID: ${data.DieId}`);
 
-      // show success message
-      setMessage(`Successfully Added! Die ID: ${data.DieId}`);
       // reset form
       setForm({
         name: "",
@@ -63,7 +93,7 @@ export default function AddDieForm() {
       });
     } catch (error) {
       console.error(error);
-      setMessage("Error adding die. Please try again.");
+      setMessage("❌ Error adding die. Please try again.");
     }
   };
 
@@ -72,6 +102,7 @@ export default function AddDieForm() {
       <div className="form-card">
         <h2 className="form-title">Add New Die</h2>
         <form onSubmit={handleSubmit}>
+          {/* Die Name */}
           <div className="form-group">
             <label htmlFor="name">Die Name</label>
             <input
@@ -84,6 +115,67 @@ export default function AddDieForm() {
               required
             />
           </div>
+
+          {/* Company Name (Dropdown + custom entry) */}
+          <div className="form-group">
+            <label htmlFor="company">Company Name</label>
+            <select
+              id="company"
+              name="company"
+              value={form.company}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- Select Company --</option>
+              {companies.map((c, i) => (
+                <option key={i} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value="__custom__">Other (Type manually)</option>
+            </select>
+
+            {/* Show text input if "Other" is chosen */}
+            {form.company === "__custom__" && (
+              <input
+                type="text"
+                placeholder="Enter new company"
+                onChange={(e) => setForm({ ...form, company: e.target.value })}
+              />
+            )}
+          </div>
+
+          {/* Material Name (Dropdown + custom entry) */}
+          <div className="form-group">
+            <label htmlFor="material">Material Name</label>
+            <select
+              id="material"
+              name="material"
+              value={form.material}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- Select Material --</option>
+              {materials.map((m, i) => (
+                <option key={i} value={m}>
+                  {m}
+                </option>
+              ))}
+              <option value="__custom__">Other (Type manually)</option>
+            </select>
+
+            {form.material === "__custom__" && (
+              <input
+                type="text"
+                placeholder="Enter new material"
+                onChange={(e) =>
+                  setForm({ ...form, material: e.target.value })
+                }
+              />
+            )}
+          </div>
+
+          {/* Other Fields */}
           <div className="form-group">
             <label htmlFor="cavity">Cavity</label>
             <input
@@ -110,32 +202,6 @@ export default function AddDieForm() {
             />
           </div>
 
-
-          <div className="form-group">
-            <label htmlFor="company">Company Name</label>
-            <input
-              id="company"
-              type="text"
-              name="company"
-              value={form.company}
-              onChange={handleChange}
-              placeholder="Enter company name"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="material">Material Name</label>
-            <input
-              id="material"
-              type="text"
-              name="material"
-              value={form.material}
-              onChange={handleChange}
-              placeholder="Material"
-            />
-          </div>
-
-          
           <div className="form-group">
             <label htmlFor="productionPerHour">Production per Hour</label>
             <input
@@ -167,6 +233,7 @@ export default function AddDieForm() {
             Save Die
           </button>
         </form>
+
         {message && <p className="success-message">{message}</p>}
       </div>
     </div>
