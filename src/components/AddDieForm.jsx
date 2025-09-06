@@ -84,31 +84,6 @@ export default function AddDieForm() {
               required
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="company">Company Name</label>
-            <input
-              id="company"
-              type="text"
-              name="company"
-              value={form.company}
-              onChange={handleChange}
-              placeholder="Enter company name"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="material">Material Name</label>
-            <input
-              id="material"
-              type="text"
-              name="material"
-              value={form.material}
-              onChange={handleChange}
-              placeholder="Material"
-            />
-          </div>
-
           <div className="form-group">
             <label htmlFor="cavity">Cavity</label>
             <input
@@ -135,6 +110,32 @@ export default function AddDieForm() {
             />
           </div>
 
+
+          <div className="form-group">
+            <label htmlFor="company">Company Name</label>
+            <input
+              id="company"
+              type="text"
+              name="company"
+              value={form.company}
+              onChange={handleChange}
+              placeholder="Enter company name"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="material">Material Name</label>
+            <input
+              id="material"
+              type="text"
+              name="material"
+              value={form.material}
+              onChange={handleChange}
+              placeholder="Material"
+            />
+          </div>
+
+          
           <div className="form-group">
             <label htmlFor="productionPerHour">Production per Hour</label>
             <input
