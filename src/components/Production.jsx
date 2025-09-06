@@ -179,11 +179,12 @@ export default function DieTable() {
         text: "❌ Submit failed",
       });
     } finally {
-      // ✅ Auto clear after 5 sec and reset form
+      // ✅ Auto clear after 2 sec and reset form
       setTimeout(() => {
         setSubmitMessage(null);
         resetForm();
-      }, 5000);
+        window.scrollTo({ top: 0, behavior: "smooth" }); // optional scroll up
+      }, 2000);
     }
   };
 
