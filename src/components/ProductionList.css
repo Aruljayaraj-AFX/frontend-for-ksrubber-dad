@@ -451,23 +451,50 @@
 .summary-card b {
   color: #007bff;
 }
-
-/* 📋 Table Adjustments */
+/* Table wrapper: horizontal scroll only */
 .table-responsive {
   margin-top: 15px;
+  width: 100%;
+  max-width: 1200px;     /* container width */
+  overflow-x: auto;      /* horizontal scroll if needed */
+  overflow-y: hidden;    /* no vertical scroll */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: #fff;
 }
 
+/* Table fixed layout */
+.die-table {
+  border-collapse: collapse;
+  table-layout: fixed;   /* fixed column widths */
+  width: 100%;           /* fill container */
+  min-width: 1200px;     /* total table width for horizontal scroll */
+}
+
+/* Fixed cell size */
+.die-table th,
+.die-table td {
+  width: 100px;          /* fixed column width */
+  height: 60px;          /* fixed row height */
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+  word-wrap: break-word;
+  white-space: normal;   /* allow text wrap */
+  border-bottom: 1px solid #ddd;
+}
+
+/* Table header */
 .die-table th {
   background: #007bff;
   color: white;
   padding: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
-.die-table td {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-}
-
+/* Lists inside cells */
 .cell-list {
   list-style: none;
   margin: 0;
@@ -477,8 +504,10 @@
 .cell-list li {
   margin: 2px 0;
 }
+
+/* Missing row styling */
 .missing-row td {
-  border: 2px solid rgba(0, 0, 0, 0.5); /* red with 50% opacity */
+  border: 2px solid rgba(0, 0, 0, 0.5);
   background-color: #ffe5e5;
   color: red;
   text-align: center;

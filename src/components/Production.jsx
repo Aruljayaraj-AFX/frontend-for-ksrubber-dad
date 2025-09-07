@@ -28,20 +28,12 @@ export default function Production({ prefillDate }) {
   const [canSubmit, setCanSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState(null);
 
-  
   // Update selectedDate if prefillDate comes from navigation
   useEffect(() => {
     if (prefillDate) {
       setSelectedDate(prefillDate);
     }
   }, [prefillDate]);
-
-   useEffect(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth",
-    });
-  }, []);
 
   useEffect(() => {
     const fetchDies = async () => {
@@ -102,7 +94,6 @@ export default function Production({ prefillDate }) {
       return;
     }
 
-    
     const payload = getPayload();
     setSubmitting(true);
     setSubmitMessage(null);
@@ -145,6 +136,13 @@ export default function Production({ prefillDate }) {
         }
 
         setCanSubmit(true);
+
+        // Scroll to results after compute
+        setTimeout(() => {
+          const resultsElement = document.querySelector(".results-box");
+          if (resultsElement)
+            resultsElement.scrollIntoView({ behavior: "smooth" });
+        }, 100);
       } else {
         alert("Failed: " + JSON.stringify(data));
       }
@@ -291,13 +289,19 @@ export default function Production({ prefillDate }) {
                 <div key={d.DieId} className="result-row">
                   <strong
                     className="clickable-die"
-                    style={{ cursor: "pointer", textDecoration: "underline", color: "#007bff" }}
+                    style={{
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      color: "#007bff",
+                    }}
                     onClick={() => navigate(`/die-details/${d.DieId}`)}
                   >
                     {dieObj?.DieName || d.DieName}
                   </strong>{" "}
                   (Cavity: {dieObj?.Cavity || "-"})
-                  <div>Overall Time: {result.new_daily_pro.overall_time[i]} hrs</div>
+                  <div>
+                    Overall Time: {result.new_daily_pro.overall_time[i]} hrs
+                  </div>
                   <div>
                     Overtime: {result.new_daily_pro.overtime[i]} hrs{" "}
                     {result.new_daily_pro.delete_index_hr &&
@@ -310,7 +314,9 @@ export default function Production({ prefillDate }) {
                   <div>Price: ₹{result.new_daily_pro.price[i]}</div>
                   <div>
                     <strong>Production Hr/Unit:</strong>{" "}
-                    <span className="green-text">{dieObj?.Pro_hr_count || 0} hrs/unit</span>
+                    <span className="green-text">
+                      {dieObj?.Pro_hr_count || 0} hrs/unit
+                    </span>
                   </div>
                 </div>
               );
@@ -329,7 +335,9 @@ export default function Production({ prefillDate }) {
               <strong>Total Income:</strong>{" "}
               <span className={netTotal >= 0 ? "positive" : "negative"}>
                 {netTotal >= 0
-                  ? `₹${netTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+                  ? `₹${netTotal.toLocaleString("en-IN", {
+                      maximumFractionDigits: 2,
+                    })}`
                   : `-₹${Math.abs(netTotal).toLocaleString("en-IN", {
                       maximumFractionDigits: 2,
                     })}`}

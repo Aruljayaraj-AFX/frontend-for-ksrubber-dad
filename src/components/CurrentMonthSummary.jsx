@@ -73,7 +73,7 @@ export default function CurrentMonthSummary() {
   return (
     <div className="summary-container">
       <div className="summary-header">
-        <h2>📊 Current Month Summary</h2>
+        <h2>Hello! Arputharaj</h2>
         <span className="summary-month">{currentMonth}</span>
       </div>
       <div className="summary-grid">
