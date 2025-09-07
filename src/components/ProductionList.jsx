@@ -69,21 +69,20 @@ export default function DailyProductionTable() {
     }
   };
 
-  // 📅 Generate all days of month
+  // Generate all days of month
   const getDaysInMonth = (year, month) => {
-    const date = new Date(year, month, 1);
     const days = [];
-    while (date.getMonth() === month) {
-      days.push(date.toISOString().slice(0, 10)); // YYYY-MM-DD
-      date.setDate(date.getDate() + 1);
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    for (let day = 1; day <= lastDay; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      days.push(dateStr);
     }
     return days;
   };
 
-  // Current date helpers
   const today = new Date();
   const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-based
+  const currentMonth = today.getMonth();
 
   let yearNum, monthNum;
 
@@ -92,7 +91,7 @@ export default function DailyProductionTable() {
     monthNum = parseInt(selectedMonth.slice(5, 7), 10) - 1;
   } else if (selectedYear) {
     yearNum = parseInt(selectedYear, 10);
-    monthNum = 0; // default January
+    monthNum = 0;
   } else {
     yearNum = currentYear;
     monthNum = currentMonth;
@@ -100,7 +99,7 @@ export default function DailyProductionTable() {
 
   let allDates = getDaysInMonth(yearNum, monthNum);
 
-  // ⛔ Restrict to today if current month selected
+  // Restrict to today if current month
   if (yearNum === currentYear && monthNum === currentMonth) {
     allDates = allDates.filter((d) => new Date(d) <= today);
   }
@@ -125,12 +124,10 @@ export default function DailyProductionTable() {
       return true;
     });
 
-  // 📊 Summary calculation
+  // Summary calculation
   const totalOvertime = displayedProductions.reduce((sum, prod) => {
     if (prod.isMissing) return sum;
-    return (
-      sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
-    );
+    return sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0);
   }, 0);
 
   const totalMonthyPay = displayedProductions.reduce((sum, prod) => {
@@ -139,6 +136,14 @@ export default function DailyProductionTable() {
   }, 0);
 
   const finalPay = totalMonthyPay + 13000;
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   if (loading) return <p>Loading daily production...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
@@ -183,9 +188,9 @@ export default function DailyProductionTable() {
               <tr>
                 <th>Date</th>
                 <th>Dies</th>
+                <th>Overall Production</th>
                 <th>Overall Time (hr)</th>
                 <th>Overtime</th>
-                <th>Overall Production</th>
                 <th>Prices</th>
                 <th>Monthy Pay</th>
               </tr>
@@ -193,18 +198,14 @@ export default function DailyProductionTable() {
             <tbody>
               {displayedProductions.map((prod) =>
                 prod.isMissing ? (
-                  <tr key={prod.date} style={{ border: "2px solid red" }}>
+                  <tr key={prod.date} className="missing-row">
                     <td>
-                      {prod.date}
+                      {formatDate(prod.date)}
                       {new Date(prod.date).getDay() === 0 && (
-                        <div style={{ color: "blue", fontSize: "12px" }}>
-                          Sunday
-                        </div>
+                        <div style={{ color: "blue", fontSize: "12px" }}>Sunday</div>
                       )}
                     </td>
-                    <td colSpan="6" style={{ textAlign: "center", color: "red" }}>
-                      No data entered
-                    </td>
+                    <td colSpan="6">No data entered</td>
                   </tr>
                 ) : (
                   <tr
@@ -213,17 +214,22 @@ export default function DailyProductionTable() {
                     style={{ cursor: "pointer" }}
                   >
                     <td>
-                      {prod.date}
+                      {formatDate(prod.date)}
                       {new Date(prod.date).getDay() === 0 && (
-                        <div style={{ color: "blue", fontSize: "12px" }}>
-                          Sunday
-                        </div>
+                        <div style={{ color: "blue", fontSize: "12px" }}>Sunday</div>
                       )}
                     </td>
                     <td>
                       <ul className="cell-list">
                         {prod.DieId.map((id, i) => (
                           <li key={i}>{getDieName(id)}</li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td>
+                      <ul className="cell-list">
+                        {prod.overall_production.map((p, i) => (
+                          <li key={i}>{p ?? "-"}</li>
                         ))}
                       </ul>
                     </td>
@@ -238,13 +244,6 @@ export default function DailyProductionTable() {
                       <ul className="cell-list">
                         {prod.overtime.map((o, i) => (
                           <li key={i}>{o ?? "-"}</li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td>
-                      <ul className="cell-list">
-                        {prod.overall_production.map((p, i) => (
-                          <li key={i}>{p ?? "-"}</li>
                         ))}
                       </ul>
                     </td>
@@ -283,7 +282,7 @@ export default function DailyProductionTable() {
               ×
             </button>
             <h3 className="modal-title">
-              Production Detail - {selectedProduction.date}
+              Production Detail - {formatDate(selectedProduction.date)}
             </h3>
 
             <div className="modal-details">
@@ -293,6 +292,16 @@ export default function DailyProductionTable() {
                   <ul>
                     {selectedProduction.DieId.map((id, i) => (
                       <li key={i}>{getDieName(id)}</li>
+                    ))}
+                  </ul>
+                </span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Overall Production</span>
+                <span className="detail-value">
+                  <ul>
+                    {selectedProduction.overall_production.map((p, i) => (
+                      <li key={i}>{p}</li>
                     ))}
                   </ul>
                 </span>
@@ -313,16 +322,6 @@ export default function DailyProductionTable() {
                   <ul>
                     {selectedProduction.overtime.map((o, i) => (
                       <li key={i}>{o}</li>
-                    ))}
-                  </ul>
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Overall Production</span>
-                <span className="detail-value">
-                  <ul>
-                    {selectedProduction.overall_production.map((p, i) => (
-                      <li key={i}>{p}</li>
                     ))}
                   </ul>
                 </span>
