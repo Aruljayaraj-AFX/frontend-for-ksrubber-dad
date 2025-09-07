@@ -9,7 +9,7 @@ export default function CurrentMonthSummary() {
     const fetchData = async () => {
       try {
         const prodRes = await fetch(
-          "https://ksrubber-dadproject.onrender.com/afx/pro_ksrubber/v1/daily-production/"
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
         );
         if (!prodRes.ok) throw new Error("Failed to fetch daily production");
 

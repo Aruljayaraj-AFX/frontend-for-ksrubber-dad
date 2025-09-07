@@ -1,84 +1,35 @@
-import { useState, useEffect, useRef } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import "./App.css";
 
-import Production from "./components/Production";
-import AddDieForm from "./components/AddDieForm";
-import DieTable from "./components/DieTable";
-import ProductionList from "./components/ProductionList";
-import CurrentMonthSummary from "./components/CurrentMonthSummary";
+// Pages
+import HomePage from "./pages/HomePage";
+import ProductionPage from "./pages/ProductionPage";
+import DiePage from "./pages/DiePage";
+import ProductionDetailsPage from "./pages/ProductionDetailsPage";
+import DieDetailsPage from "./pages/DieDetailsPage";
 
 function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activeComponent, setActiveComponent] = useState("home");
-  const navRef = useRef(null);
-
-  // ✅ Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (navRef.current && !navRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
-
-  const renderComponent = () => {
-    switch (activeComponent) {
-      case "production":
-        return <Production />;
-      case "die":
-        return <AddDieForm />;
-      case "productionDetails":
-        return <ProductionList />;
-      case "dieDetails":
-        return <DieTable />;
-      case "home":
-      default:
-        return <CurrentMonthSummary />;
-    }
-  };
-
-  // ✅ Helper to change component & close menu
-  const handleNavClick = (component) => {
-    setActiveComponent(component);
-    setMenuOpen(false);
-  };
-
   return (
-    <>
-      <nav className="navbar" ref={navRef}>
+    <Router>
+      <nav className="navbar">
         <div className="navbar-logo">AFX</div>
 
-        {/* Hamburger for mobile */}
-        <div
-          className={`hamburger ${menuOpen ? "active" : ""}`}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-
         {/* Nav Links */}
-        <ul className={`navbar-links ${menuOpen ? "open" : ""}`}>
-          <li onClick={() => handleNavClick("home")}>
-            <a href="#"><i className="fas fa-home"></i> Home</a>
+        <ul className="navbar-links">
+          <li>
+            <Link to="/"><i className="fas fa-home"></i> Home</Link>
           </li>
-          <li onClick={() => handleNavClick("production")}>
-            <a href="#"><i className="fas fa-info-circle"></i> Production</a>
+          <li>
+            <Link to="/production"><i className="fas fa-info-circle"></i> Production</Link>
           </li>
-          <li onClick={() => handleNavClick("die")}>
-            <a href="#"><i className="fas fa-cog"></i> Die</a>
+          <li>
+            <Link to="/die"><i className="fas fa-cog"></i> Die</Link>
           </li>
-          <li onClick={() => handleNavClick("productionDetails")}>
-            <a href="#"><i className="fas fa-table"></i> Production Details</a>
+          <li>
+            <Link to="/production-details"><i className="fas fa-table"></i> Production Details</Link>
           </li>
-          <li onClick={() => handleNavClick("dieDetails")}>
-            <a href="#"><i className="fas fa-list"></i> Die Details</a>
+          <li>
+            <Link to="/die-details"><i className="fas fa-list"></i> Die Details</Link>
           </li>
         </ul>
 
@@ -87,8 +38,16 @@ function App() {
       </nav>
 
       {/* Main Content */}
-      <main className="main-content">{renderComponent()}</main>
-    </>
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/production" element={<ProductionPage />} />
+          <Route path="/die" element={<DiePage />} />
+          <Route path="/production-details" element={<ProductionDetailsPage />} />
+          <Route path="/die-details" element={<DieDetailsPage />} />
+        </Routes>
+      </main>
+    </Router>
   );
 }
 
