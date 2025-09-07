@@ -18,41 +18,33 @@ export default function AddDieForm() {
   const [customMaterial, setCustomMaterial] = useState(""); // 🔹 separate custom input
   const [message, setMessage] = useState("");
 
-const [dies, setDies] = useState([]);
+  useEffect(() => {
+    const fetchDies = async () => {
+      try {
+        const response = await fetch(
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+        );
+        if (!response.ok) throw new Error("Failed to fetch dies");
+        const data = await response.json();
 
-useEffect(() => {
-  const fetchDies = async () => {
-    try {
-      const response = await fetch(
-        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
-      );
-      if (!response.ok) throw new Error("Failed to fetch dies");
-      const data = await response.json();
-
-      if (data.status === "success") {
-        let diesData = data.data;
-
-        // Sort by company name first (alphabetically)
-        diesData.sort((a, b) => a.CompanyName.localeCompare(b.CompanyName));
-
-        // Then sort within each company by DieName
-        diesData = diesData.sort((a, b) => {
-          if (a.CompanyName === b.CompanyName) {
-            // Natural sort for die names (numbers inside names)
-            return a.DieName.localeCompare(b.DieName, undefined, { numeric: true, sensitivity: "base" });
-          }
-          return 0;
-        });
-
-        setDies(diesData);
+        if (data.status === "success") {
+          const dies = data.data;
+          const uniqueCompanies = [
+            ...new Set(dies.map((d) => d.CompanyName).filter(Boolean)),
+          ];
+          const uniqueMaterials = [
+            ...new Set(dies.map((d) => d.Materials).filter(Boolean)),
+          ];
+          setCompanies(uniqueCompanies);
+          setMaterials(uniqueMaterials);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    };
 
-  fetchDies();
-}, []);
+    fetchDies();
+  }, []);
 
   // 🔹 Scroll to bottom on mount
   useEffect(() => {

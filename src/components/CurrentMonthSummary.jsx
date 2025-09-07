@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 
-export default function CurrentMonthSummary() {
+export default function MonthlySummary() {
   const [productions, setProductions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  ); // default current month YYYY-MM
 
+  // Fetch productions
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,42 +34,36 @@ export default function CurrentMonthSummary() {
     fetchData();
   }, []);
 
-  // 🔹 Scroll to bottom on mount
-  useEffect(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth",
-    });
-  }, []);
+  // Navigate to previous month
+  const handlePrevMonth = () => {
+    const [year, month] = selectedMonth.split("-").map(Number);
+    const prev = new Date(year, month - 2); // month-2 because JS months 0-indexed
+    setSelectedMonth(prev.toISOString().slice(0, 7));
+  };
 
-  // 🔹 Scroll again when productions or error changes
-  useEffect(() => {
-    if (productions.length > 0 || error) {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [productions, error]);
+  // Navigate to next month
+  const handleNextMonth = () => {
+    const [year, month] = selectedMonth.split("-").map(Number);
+    const next = new Date(year, month); // month is 0-indexed in JS Date
+    setSelectedMonth(next.toISOString().slice(0, 7));
+  };
 
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-
+  // Filter productions by selected month
   const filteredProductions = productions.filter(
-    (prod) => prod.date.slice(0, 7) === currentMonth
+    (prod) => prod.date.slice(0, 7) === selectedMonth
   );
 
+  // Calculate totals
   const totalOvertime = filteredProductions.reduce((sum, prod) => {
-    return (
-      sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
-    );
+    return sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0);
   }, 0);
 
-  const totalMonthyPay = filteredProductions.reduce(
+  const totalMonthlyPay = filteredProductions.reduce(
     (sum, prod) => sum + (parseFloat(prod.monthy_pay) || 0),
     0
   );
 
-  const finalPay = totalMonthyPay + 13000;
+  const finalPay = totalMonthlyPay + 13000;
 
   if (loading) return <p className="loading-msg">Loading summary...</p>;
   if (error) return <p className="error-msg">{error}</p>;
@@ -74,8 +72,19 @@ export default function CurrentMonthSummary() {
     <div className="summary-container">
       <div className="summary-header">
         <h2>Hello! Arputharaj</h2>
-        <span className="summary-month">{currentMonth}</span>
+
+        {/* Month selector + navigation */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button onClick={handlePrevMonth}>◀ Previous</button>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          />
+          <button onClick={handleNextMonth}>Next ▶</button>
+        </div>
       </div>
+
       <div className="summary-grid">
         <div className="summary-item">
           <h4>Total Overtime</h4>
@@ -83,7 +92,7 @@ export default function CurrentMonthSummary() {
         </div>
         <div className="summary-item">
           <h4>Total Monthly Pay</h4>
-          <p>{totalMonthyPay}</p>
+          <p>{totalMonthlyPay}</p>
         </div>
         <div className="summary-item highlight">
           <h4>Final Pay (+13,000)</h4>
