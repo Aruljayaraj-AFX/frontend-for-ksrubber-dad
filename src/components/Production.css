@@ -182,7 +182,7 @@
   margin-top: 15px;
   width: 100%;
   padding: 10px;
-  background: #5b8def;
+  background: #5bef96ff;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -192,7 +192,7 @@
 }
 
 .submit-btn:hover {
-  background: #4570d4;
+  background: #45d4b3ff;
 }
 /* === Date Input === */
 .date-input {
@@ -286,3 +286,8 @@
   font-weight: 600;
 }
 
+
+.green-text {
+  color: green;
+  font-weight: bold; /* optional for emphasis */
+}

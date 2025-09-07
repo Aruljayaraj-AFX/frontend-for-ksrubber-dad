@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Select from "react-select";
+import { useNavigate } from "react-router-dom";
 import "./Production.css";
 
 // Helper to get today's date in YYYY-MM-DD format
@@ -11,7 +12,9 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-export default function DieTable({ prefillDate }) {   // ✅ accept prop
+export default function Production({ prefillDate }) {
+  const navigate = useNavigate();
+
   const [dies, setDies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,12 +28,20 @@ export default function DieTable({ prefillDate }) {   // ✅ accept prop
   const [canSubmit, setCanSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState(null);
 
-  // ✅ update selectedDate if prefillDate comes from navigation
+  
+  // Update selectedDate if prefillDate comes from navigation
   useEffect(() => {
     if (prefillDate) {
       setSelectedDate(prefillDate);
     }
   }, [prefillDate]);
+
+   useEffect(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth",
+    });
+  }, []);
 
   useEffect(() => {
     const fetchDies = async () => {
@@ -52,9 +63,10 @@ export default function DieTable({ prefillDate }) {   // ✅ accept prop
     fetchDies();
   }, []);
 
+  // Include Cavity in options
   const options = dies.map((die) => ({
     value: die.DieId,
-    label: die.DieName,
+    label: `${die.DieName} (Cavity: ${die.Cavity})`,
   }));
 
   const handleProductionChange = (dieId, value) => {
@@ -90,6 +102,7 @@ export default function DieTable({ prefillDate }) {   // ✅ accept prop
       return;
     }
 
+    
     const payload = getPayload();
     setSubmitting(true);
     setSubmitMessage(null);
@@ -276,7 +289,14 @@ export default function DieTable({ prefillDate }) {   // ✅ accept prop
               const dieObj = dies.find((die) => die.DieId === d.DieId);
               return (
                 <div key={d.DieId} className="result-row">
-                  <strong>{d.DieName}</strong>
+                  <strong
+                    className="clickable-die"
+                    style={{ cursor: "pointer", textDecoration: "underline", color: "#007bff" }}
+                    onClick={() => navigate(`/die-details/${d.DieId}`)}
+                  >
+                    {dieObj?.DieName || d.DieName}
+                  </strong>{" "}
+                  (Cavity: {dieObj?.Cavity || "-"})
                   <div>Overall Time: {result.new_daily_pro.overall_time[i]} hrs</div>
                   <div>
                     Overtime: {result.new_daily_pro.overtime[i]} hrs{" "}
@@ -290,7 +310,7 @@ export default function DieTable({ prefillDate }) {   // ✅ accept prop
                   <div>Price: ₹{result.new_daily_pro.price[i]}</div>
                   <div>
                     <strong>Production Hr/Unit:</strong>{" "}
-                    {dieObj?.Pro_hr_count || 0} hrs/unit
+                    <span className="green-text">{dieObj?.Pro_hr_count || 0} hrs/unit</span>
                   </div>
                 </div>
               );

@@ -70,7 +70,12 @@ function App() {
           <Route path="/production" element={<ProductionPage />} />
           <Route path="/die" element={<DiePage />} />
           <Route path="/production-details" element={<ProductionDetailsPage />} />
+          
+          {/* Existing route */}
           <Route path="/die-details" element={<DieDetailsPage />} />
+
+          {/* NEW: route to handle dieId from URL */}
+          <Route path="/die-details/:dieId" element={<DieDetailsPage />} />
         </Routes>
       </main>
     </Router>
