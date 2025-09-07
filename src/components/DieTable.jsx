@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom"; // ✅ import
+import { useParams } from "react-router-dom";
 import "./DieTable.css";
 
 export default function DieTable() {
-  const { dieId } = useParams(); // ✅ get dieId from URL
+  const { dieId } = useParams();
   const [dies, setDies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedDie, setSelectedDie] = useState(null); // modal
-  const [editMode, setEditMode] = useState(false);      // edit toggle
-  const [editData, setEditData] = useState({});         // edit form data
+  const [selectedDie, setSelectedDie] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editData, setEditData] = useState({});
   const itemsPerPage = 20;
 
-  // Fetch all dies
+  // Fetch all dies and sort: company alphabetically, die name natural order
   useEffect(() => {
     const fetchDies = async () => {
       try {
@@ -24,11 +24,21 @@ export default function DieTable() {
         if (!response.ok) throw new Error("Failed to fetch dies");
         const data = await response.json();
         if (data.status === "success") {
-          setDies(data.data);
+          const sortedDies = data.data.sort((a, b) => {
+            const cmpCompany = a.CompanyName.localeCompare(b.CompanyName);
+            if (cmpCompany !== 0) return cmpCompany;
+            // Natural sort for die name
+            return a.DieName.localeCompare(b.DieName, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
+          });
+
+          setDies(sortedDies);
 
           // Open modal if dieId exists in URL
           if (dieId) {
-            const foundDie = data.data.find(d => d.DieId === dieId);
+            const foundDie = sortedDies.find((d) => d.DieId === dieId);
             if (foundDie) setSelectedDie(foundDie);
             else setError("Die not found");
           }
@@ -113,7 +123,6 @@ export default function DieTable() {
         prev.map((d) => (d.DieId === selectedDie.DieId ? result.data : d))
       );
 
-      // Reset modal state
       setEditMode(false);
       setSelectedDie(null);
       setError("");
