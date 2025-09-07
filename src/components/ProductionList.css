@@ -477,3 +477,8 @@
 .cell-list li {
   margin: 2px 0;
 }
+
+.missing-row {
+  border: 2px solid red;
+  background-color: #ffe5e5;
+}

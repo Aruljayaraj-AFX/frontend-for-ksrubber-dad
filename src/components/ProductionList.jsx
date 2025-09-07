@@ -69,48 +69,61 @@ export default function DailyProductionTable() {
     }
   };
 
-  // 🔎 Filtering logic
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const currentYear = new Date().getFullYear().toString(); // YYYY
-
-  const filteredProductions = productions.filter((prod) => {
-    const prodMonth = prod.date.slice(0, 7); // YYYY-MM
-    const prodYear = prod.date.slice(0, 4); // YYYY
-
-    // Check month filter
-    if (selectedMonth) {
-      return prodMonth === selectedMonth;
+  // 📅 Generate all days of month
+  const getDaysInMonth = (year, month) => {
+    const date = new Date(year, month, 1);
+    const days = [];
+    while (date.getMonth() === month) {
+      days.push(date.toISOString().slice(0, 10)); // YYYY-MM-DD
+      date.setDate(date.getDate() + 1);
     }
+    return days;
+  };
 
-    // Check year filter
-    if (selectedYear) {
-      return prodYear === selectedYear;
-    }
+  // Current date helpers
+  const today = new Date();
+  const activeYear = selectedYear || today.getFullYear().toString();
+  const activeMonth =
+    selectedMonth ||
+    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
-    // Default → current month
-    return prodMonth === currentMonth;
-  }).filter((prod) => {
-    // Check search filter
-    return (
-      searchTerm.trim() === "" ||
-      prod.DieId.some((id) =>
-        getDieName(id).toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  });
+  const yearNum = parseInt(activeYear, 10);
+  const monthNum = parseInt(activeMonth.slice(5, 7), 10) - 1; // 0-based
+  const allDates = getDaysInMonth(yearNum, monthNum);
+
+  // Map productions by date
+  const productionMap = {};
+  productions.forEach((p) => (productionMap[p.date] = p));
+
+  // Merge: ensure all dates show
+  const displayedProductions = allDates
+    .map((date) =>
+      productionMap[date]
+        ? { ...productionMap[date], isMissing: false }
+        : { date, isMissing: true }
+    )
+    .filter((prod) => {
+      // 🔎 search filter
+      if (searchTerm.trim() !== "" && !prod.isMissing) {
+        return prod.DieId.some((id) =>
+          getDieName(id).toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      return true;
+    });
 
   // 📊 Summary calculation
-  const totalOvertime = filteredProductions.reduce((sum, prod) => {
+  const totalOvertime = displayedProductions.reduce((sum, prod) => {
+    if (prod.isMissing) return sum;
     return (
-      sum +
-      prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
+      sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
     );
   }, 0);
 
-  const totalMonthyPay = filteredProductions.reduce(
-    (sum, prod) => sum + (parseFloat(prod.monthy_pay) || 0),
-    0
-  );
+  const totalMonthyPay = displayedProductions.reduce((sum, prod) => {
+    if (prod.isMissing) return sum;
+    return sum + (parseFloat(prod.monthy_pay) || 0);
+  }, 0);
 
   const finalPay = totalMonthyPay + 13000;
 
@@ -168,14 +181,15 @@ export default function DailyProductionTable() {
               </tr>
             </thead>
             <tbody>
-              {filteredProductions.length === 0 ? (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: "center" }}>
-                    No production records found.
-                  </td>
-                </tr>
-              ) : (
-                filteredProductions.map((prod) => (
+              {displayedProductions.map((prod) =>
+                prod.isMissing ? (
+                  <tr key={prod.date} style={{ border: "2px solid red" }}>
+                    <td>{prod.date}</td>
+                    <td colSpan="6" style={{ textAlign: "center", color: "red" }}>
+                      No data entered
+                    </td>
+                  </tr>
+                ) : (
                   <tr
                     key={prod.sno}
                     onClick={() => setSelectedProduction(prod)}
@@ -219,7 +233,7 @@ export default function DailyProductionTable() {
                     </td>
                     <td>{prod.monthy_pay}</td>
                   </tr>
-                ))
+                )
               )}
             </tbody>
           </table>
@@ -228,12 +242,7 @@ export default function DailyProductionTable() {
         {/* 📊 Summary */}
         <div className="summary-card">
           <h3>
-            Summary for{" "}
-            {selectedMonth
-              ? selectedMonth
-              : selectedYear
-              ? selectedYear
-              : currentMonth}
+            Summary for {selectedMonth || selectedYear || activeMonth}
           </h3>
           <p>Total Overtime: <b>{totalOvertime}</b></p>
           <p>Total Monthly Pay: <b>{totalMonthyPay}</b></p>
