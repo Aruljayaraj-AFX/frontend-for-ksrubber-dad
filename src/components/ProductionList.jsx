@@ -82,14 +82,28 @@ export default function DailyProductionTable() {
 
   // Current date helpers
   const today = new Date();
-  const activeYear = selectedYear || today.getFullYear().toString();
-  const activeMonth =
-    selectedMonth ||
-    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-based
 
-  const yearNum = parseInt(activeYear, 10);
-  const monthNum = parseInt(activeMonth.slice(5, 7), 10) - 1; // 0-based
-  const allDates = getDaysInMonth(yearNum, monthNum);
+  let yearNum, monthNum;
+
+  if (selectedMonth) {
+    yearNum = parseInt(selectedMonth.slice(0, 4), 10);
+    monthNum = parseInt(selectedMonth.slice(5, 7), 10) - 1;
+  } else if (selectedYear) {
+    yearNum = parseInt(selectedYear, 10);
+    monthNum = 0; // default January
+  } else {
+    yearNum = currentYear;
+    monthNum = currentMonth;
+  }
+
+  let allDates = getDaysInMonth(yearNum, monthNum);
+
+  // ⛔ Restrict to today if current month selected
+  if (yearNum === currentYear && monthNum === currentMonth) {
+    allDates = allDates.filter((d) => new Date(d) <= today);
+  }
 
   // Map productions by date
   const productionMap = {};
@@ -103,7 +117,6 @@ export default function DailyProductionTable() {
         : { date, isMissing: true }
     )
     .filter((prod) => {
-      // 🔎 search filter
       if (searchTerm.trim() !== "" && !prod.isMissing) {
         return prod.DieId.some((id) =>
           getDieName(id).toLowerCase().includes(searchTerm.toLowerCase())
@@ -135,7 +148,6 @@ export default function DailyProductionTable() {
       <div className="form-card table-card">
         <h2 className="form-title">Daily Production</h2>
 
-        {/* 🔎 Search & Filters */}
         <div className="filter-bar">
           <input
             type="text"
@@ -144,24 +156,22 @@ export default function DailyProductionTable() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
-
           <input
             type="month"
             value={selectedMonth}
             onChange={(e) => {
               setSelectedMonth(e.target.value);
-              setSelectedYear(""); // reset year when picking month
+              setSelectedYear("");
             }}
             className="month-input"
           />
-
           <input
             type="number"
             placeholder="Year (YYYY)"
             value={selectedYear}
             onChange={(e) => {
               setSelectedYear(e.target.value);
-              setSelectedMonth(""); // reset month when picking year
+              setSelectedMonth("");
             }}
             className="year-input"
           />
@@ -184,7 +194,14 @@ export default function DailyProductionTable() {
               {displayedProductions.map((prod) =>
                 prod.isMissing ? (
                   <tr key={prod.date} style={{ border: "2px solid red" }}>
-                    <td>{prod.date}</td>
+                    <td>
+                      {prod.date}
+                      {new Date(prod.date).getDay() === 0 && (
+                        <div style={{ color: "blue", fontSize: "12px" }}>
+                          Sunday
+                        </div>
+                      )}
+                    </td>
                     <td colSpan="6" style={{ textAlign: "center", color: "red" }}>
                       No data entered
                     </td>
@@ -195,7 +212,14 @@ export default function DailyProductionTable() {
                     onClick={() => setSelectedProduction(prod)}
                     style={{ cursor: "pointer" }}
                   >
-                    <td>{prod.date}</td>
+                    <td>
+                      {prod.date}
+                      {new Date(prod.date).getDay() === 0 && (
+                        <div style={{ color: "blue", fontSize: "12px" }}>
+                          Sunday
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <ul className="cell-list">
                         {prod.DieId.map((id, i) => (
@@ -239,10 +263,9 @@ export default function DailyProductionTable() {
           </table>
         </div>
 
-        {/* 📊 Summary */}
         <div className="summary-card">
           <h3>
-            Summary for {selectedMonth || selectedYear || activeMonth}
+            Summary for {selectedMonth || selectedYear || `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`}
           </h3>
           <p>Total Overtime: <b>{totalOvertime}</b></p>
           <p>Total Monthly Pay: <b>{totalMonthyPay}</b></p>
@@ -250,7 +273,6 @@ export default function DailyProductionTable() {
         </div>
       </div>
 
-      {/* Detail Modal */}
       {selectedProduction && (
         <div className="modal-overlay">
           <div className="modal-card">
