@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ⬅️ for redirect
 import "./ProductionList.css";
 
 export default function DailyProductionTable() {
@@ -11,6 +12,8 @@ export default function DailyProductionTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+
+  const navigate = useNavigate(); // ⬅️ navigation hook
 
   // Fetch productions + dies
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function DailyProductionTable() {
       );
       const data = await response.json();
       if (data.status === "success") {
-        setProductions(productions.filter((p) => p.sno !== sno));
+        setProductions((prev) => prev.filter((p) => p.sno !== sno));
         setSelectedProduction(null);
       } else {
         alert("Delete failed!");
@@ -74,7 +77,9 @@ export default function DailyProductionTable() {
     const days = [];
     const lastDay = new Date(year, month + 1, 0).getDate();
     for (let day = 1; day <= lastDay; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        day
+      ).padStart(2, "0")}`;
       days.push(dateStr);
     }
     return days;
@@ -126,12 +131,14 @@ export default function DailyProductionTable() {
 
   // Summary calculation
   const totalOvertime = displayedProductions.reduce((sum, prod) => {
-    if (prod.isMissing) return sum;
-    return sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+    if (prod.isMissing || !Array.isArray(prod.overtime)) return sum;
+    return (
+      sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
+    );
   }, 0);
 
   const totalMonthyPay = displayedProductions.reduce((sum, prod) => {
-    if (prod.isMissing) return sum;
+    if (prod.isMissing || !prod.monthy_pay) return sum;
     return sum + (parseFloat(prod.monthy_pay) || 0);
   }, 0);
 
@@ -153,6 +160,7 @@ export default function DailyProductionTable() {
       <div className="form-card table-card">
         <h2 className="form-title">Daily Production</h2>
 
+        {/* Filters */}
         <div className="filter-bar">
           <input
             type="text"
@@ -182,6 +190,7 @@ export default function DailyProductionTable() {
           />
         </div>
 
+        {/* Table */}
         <div className="table-responsive">
           <table className="die-table">
             <thead>
@@ -192,17 +201,22 @@ export default function DailyProductionTable() {
                 <th>Overall Time (hr)</th>
                 <th>Overtime</th>
                 <th>Prices</th>
-                <th>Monthy Pay</th>
+                <th>Monthly Pay</th>
               </tr>
             </thead>
             <tbody>
               {displayedProductions.map((prod) =>
                 prod.isMissing ? (
-                  <tr key={prod.date} className="missing-row">
+                  <tr
+                    key={prod.date}
+                    className="missing-row"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/production?date=${prod.date}`)}
+                  >
                     <td>
                       {formatDate(prod.date)}
                       {new Date(prod.date).getDay() === 0 && (
-                        <div style={{ color: "blue", fontSize: "12px" }}>Sunday</div>
+                        <div className="sunday-note">Sunday</div>
                       )}
                     </td>
                     <td colSpan="6">No data entered</td>
@@ -216,7 +230,7 @@ export default function DailyProductionTable() {
                     <td>
                       {formatDate(prod.date)}
                       {new Date(prod.date).getDay() === 0 && (
-                        <div style={{ color: "blue", fontSize: "12px" }}>Sunday</div>
+                        <div className="sunday-note">Sunday</div>
                       )}
                     </td>
                     <td>
@@ -262,16 +276,27 @@ export default function DailyProductionTable() {
           </table>
         </div>
 
+        {/* Summary */}
         <div className="summary-card">
           <h3>
-            Summary for {selectedMonth || selectedYear || `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`}
+            Summary for{" "}
+            {selectedMonth ||
+              selectedYear ||
+              `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`}
           </h3>
-          <p>Total Overtime: <b>{totalOvertime}</b></p>
-          <p>Total Monthly Pay: <b>{totalMonthyPay}</b></p>
-          <p>Final Pay (+13,000): <b>{finalPay}</b></p>
+          <p>
+            Total Overtime: <b>{totalOvertime}</b>
+          </p>
+          <p>
+            Total Monthly Pay: <b>{totalMonthyPay}</b>
+          </p>
+          <p>
+            Final Pay (+13,000): <b>{finalPay}</b>
+          </p>
         </div>
       </div>
 
+      {/* Modal */}
       {selectedProduction && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -337,7 +362,7 @@ export default function DailyProductionTable() {
                 </span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">Monthy Pay</span>
+                <span className="detail-label">Monthly Pay</span>
                 <span className="detail-value">
                   {selectedProduction.monthy_pay}
                 </span>

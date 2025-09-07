@@ -11,7 +11,7 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-export default function DieTable() {
+export default function DieTable({ prefillDate }) {   // ✅ accept prop
   const [dies, setDies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,6 +24,13 @@ export default function DieTable() {
   const [incomeFallback, setIncomeFallback] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState(null);
+
+  // ✅ update selectedDate if prefillDate comes from navigation
+  useEffect(() => {
+    if (prefillDate) {
+      setSelectedDate(prefillDate);
+    }
+  }, [prefillDate]);
 
   useEffect(() => {
     const fetchDies = async () => {
