@@ -9,12 +9,12 @@ export default function AddDieForm() {
     cavity: "",
     weight: "",
     productionPerHour: "",
-    price: "",
+    price: 38,
   });
 
   const [companies, setCompanies] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [customCompany, setCustomCompany] = useState("");  // 🔹 separate custom input
+  const [customCompany, setCustomCompany] = useState(""); // 🔹 separate custom input
   const [customMaterial, setCustomMaterial] = useState(""); // 🔹 separate custom input
   const [message, setMessage] = useState("");
 
@@ -45,6 +45,24 @@ export default function AddDieForm() {
 
     fetchDies();
   }, []);
+
+  // 🔹 Scroll to bottom on mount
+  useEffect(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth",
+    });
+  }, []);
+
+  // 🔹 Scroll to bottom when message appears
+  useEffect(() => {
+    if (message) {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [message]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

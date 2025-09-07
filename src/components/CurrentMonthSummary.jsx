@@ -30,6 +30,24 @@ export default function CurrentMonthSummary() {
     fetchData();
   }, []);
 
+  // 🔹 Scroll to bottom on mount
+  useEffect(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth",
+    });
+  }, []);
+
+  // 🔹 Scroll again when productions or error changes
+  useEffect(() => {
+    if (productions.length > 0 || error) {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [productions, error]);
+
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
   const filteredProductions = productions.filter(
@@ -38,8 +56,7 @@ export default function CurrentMonthSummary() {
 
   const totalOvertime = filteredProductions.reduce((sum, prod) => {
     return (
-      sum +
-      prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
+      sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0)
     );
   }, 0);
 
