@@ -23,6 +23,7 @@ export default function Production({ prefillDate }) {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [isHoliday, setIsHoliday] = useState(false); // Holiday checkbox state
   const [monthIncome, setMonthIncome] = useState(null);
   const [incomeFallback, setIncomeFallback] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
@@ -34,6 +35,14 @@ export default function Production({ prefillDate }) {
       setSelectedDate(prefillDate);
     }
   }, [prefillDate]);
+
+  // Automatically check Holiday if selected date is Sunday
+  useEffect(() => {
+    if (selectedDate) {
+      const day = new Date(selectedDate).getDay();
+      setIsHoliday(day === 0); // Sunday = 0
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
     const fetchDies = async () => {
@@ -94,13 +103,20 @@ export default function Production({ prefillDate }) {
       return;
     }
 
-    const payload = getPayload();
+    const payload = {
+      ...getPayload(),
+      is_holiday: isHoliday, // optional for backend
+    };
+
+    // sub_flag = 1 if checkbox NOT selected, 0 if selected
+    const subFlag = isHoliday ? 0 : 1;
+
     setSubmitting(true);
     setSubmitMessage(null);
 
     try {
       const res = await fetch(
-        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}`,
+        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}&sub_flag=${subFlag}`,
         {
           method: "POST",
           headers: {
@@ -162,56 +178,65 @@ export default function Production({ prefillDate }) {
     setIncomeFallback(false);
     setCanSubmit(false);
     setSelectedDate((prev) => prev || getTodayDate());
+    setIsHoliday(false);
   };
 
   const handleSubmit = async () => {
-    const payload = {
-      DieIds: selectedDies,
-      ProductionCounts: selectedDies.map((id) =>
-        Number(productionCounts[id] || 0)
-      ),
-      date: selectedDate,
-    };
+  if (!selectedDate) {
+    alert("Please select a date first!");
+    return;
+  }
 
-    try {
-      const res = await fetch(
-        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/calculate_production_hours",
-        {
-          method: "POST",
-          headers: {
-            accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await res.json();
+  // sub_flag = 1 if checkbox NOT selected, 0 if selected
+  const subFlag = isHoliday ? 0 : 1;
 
-      if (data.status === "success") {
-        setSubmitMessage({
-          type: "success",
-          text: `✅ Successfully submitted! Updated income: ₹${data.updated_income}`,
-        });
-      } else {
-        setSubmitMessage({
-          type: "error",
-          text: `❌ Error: ${data.message || "Unknown error"}`,
-        });
+const payload = {
+  DieIds: selectedDies,
+  ProductionCounts: selectedDies.map((id) => Number(productionCounts[id] || 0)),
+  production_date: selectedDate,
+  sub_flag: isHoliday ? 0 : 1
+};
+  try {
+    const res = await fetch(
+      "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/calculate_production_hours",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       }
-    } catch (err) {
-      console.error(err);
+    );
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+      setSubmitMessage({
+        type: "success",
+        text: `✅ Successfully submitted! Updated income: ₹${data.updated_income}`,
+      });
+    } else {
       setSubmitMessage({
         type: "error",
-        text: "❌ Submit failed",
+        text: `❌ Error: ${data.message || "Unknown error"}`,
       });
-    } finally {
-      setTimeout(() => {
-        setSubmitMessage(null);
-        resetForm();
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }, 2000);
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setSubmitMessage({
+      type: "error",
+      text: "❌ Submit failed",
+    });
+  } finally {
+    setTimeout(() => {
+      setSubmitMessage(null);
+      resetForm();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 2000);
+  }
+};
+
 
   if (loading) return <p className="info-text">Loading dies...</p>;
   if (error) return <p className="info-text error">{error}</p>;
@@ -234,6 +259,18 @@ export default function Production({ prefillDate }) {
             value={selectedDate}
             onChange={(e) => handleDateChange(e.target.value)}
           />
+        </div>
+
+        {/* Holiday checkbox */}
+        <div className="form-group holiday-group">
+          <label>
+            <input
+              type="checkbox"
+              checked={isHoliday}
+              onChange={(e) => setIsHoliday(e.target.checked)}
+            />
+            Holiday
+          </label>
         </div>
 
         {/* Multi-select dropdown */}
