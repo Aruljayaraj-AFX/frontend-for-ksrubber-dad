@@ -12,7 +12,14 @@ function App() {
   const [activeComponent, setActiveComponent] = useState("home");
   const navRef = useRef(null);
 
-  // ✅ Close menu when clicking outside
+  // Components order for swipe navigation
+  const componentOrder = ["home", "production", "die", "productionDetails", "dieDetails"];
+
+  // Swipe tracking
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
@@ -25,6 +32,31 @@ function App() {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
+
+  // Handle swipe gesture
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    const deltaX = touchEndX.current - touchStartX.current;
+    const threshold = 50; // minimum distance for swipe
+
+    const currentIndex = componentOrder.indexOf(activeComponent);
+
+    if (deltaX < -threshold && currentIndex < componentOrder.length - 1) {
+      // Swipe left → next component
+      setActiveComponent(componentOrder[currentIndex + 1]);
+    } else if (deltaX > threshold && currentIndex > 0) {
+      // Swipe right → previous component
+      setActiveComponent(componentOrder[currentIndex - 1]);
+    }
+  };
 
   const renderComponent = () => {
     switch (activeComponent) {
@@ -42,7 +74,6 @@ function App() {
     }
   };
 
-  // ✅ Helper to change component & close menu
   const handleNavClick = (component) => {
     setActiveComponent(component);
     setMenuOpen(false);
@@ -53,7 +84,6 @@ function App() {
       <nav className="navbar" ref={navRef}>
         <div className="navbar-logo">AFX</div>
 
-        {/* Hamburger for mobile */}
         <div
           className={`hamburger ${menuOpen ? "active" : ""}`}
           onClick={() => setMenuOpen(!menuOpen)}
@@ -63,7 +93,6 @@ function App() {
           <span></span>
         </div>
 
-        {/* Nav Links */}
         <ul className={`navbar-links ${menuOpen ? "open" : ""}`}>
           <li onClick={() => handleNavClick("home")}>
             <a href="#"><i className="fas fa-home"></i> Home</a>
@@ -82,12 +111,17 @@ function App() {
           </li>
         </ul>
 
-        {/* Logout button */}
         <button className="logout-btn">Logout</button>
       </nav>
 
-      {/* Main Content */}
-      <main className="main-content">{renderComponent()}</main>
+      {/* Main Content with swipe handlers */}
+      <main
+        className="main-content"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {renderComponent()}
+      </main>
     </>
   );
 }
