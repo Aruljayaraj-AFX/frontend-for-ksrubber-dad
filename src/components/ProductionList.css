@@ -512,3 +512,28 @@
   color: red;
   text-align: center;
 }
+
+.holiday-note {
+  color: #7b3ce7ff; /* red or any color you want */
+  font-weight: bold;
+  font-style: italic;
+}
+
+.leave-row {
+  background-color: #cce5ff; /* light blue */
+  color: #004085; /* dark blue text */
+  font-weight: bold;
+}
+
+.holiday-note {
+  color: #9f0a97ff; /* red or any color */
+  font-weight: bold;
+  font-style: italic;
+}
+.neutral-row {
+  background-color: #f5f5f5; /* light gray */
+  color: #555;              /* neutral text */
+  border: none !important;  /* remove border */
+  text-align: center;
+  font-style: italic;
+}

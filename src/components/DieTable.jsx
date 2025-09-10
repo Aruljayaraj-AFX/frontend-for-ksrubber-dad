@@ -24,7 +24,12 @@ export default function DieTable() {
         if (!response.ok) throw new Error("Failed to fetch dies");
         const data = await response.json();
         if (data.status === "success") {
-          const sortedDies = data.data.sort((a, b) => {
+          // 🚫 Filter out unwanted DieId
+          const filteredDies = data.data.filter(
+            (d) => d.DieId !== "KSD223adbd2"
+          );
+
+          const sortedDies = filteredDies.sort((a, b) => {
             const cmpCompany = a.CompanyName.localeCompare(b.CompanyName);
             if (cmpCompany !== 0) return cmpCompany;
             // Natural sort for die name

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ⬅️ for redirect
+import { useNavigate } from "react-router-dom"; // for redirect
 import "./ProductionList.css";
 
 export default function DailyProductionTable() {
@@ -8,14 +8,30 @@ export default function DailyProductionTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedProduction, setSelectedProduction] = useState(null);
+  const [leaveDates, setLeaveDates] = useState([]); // Track leave rows
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
 
-  const navigate = useNavigate(); // ⬅️ navigation hook
+  const navigate = useNavigate();
 
-  // Fetch productions + dies
+  // 🔹 Fetch productions
+  const fetchProductions = async () => {
+    try {
+      const prodRes = await fetch(
+        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
+      );
+      if (!prodRes.ok) throw new Error("Failed to fetch daily production");
+      const prodData = await prodRes.json();
+      if (prodData.status === "success") setProductions(prodData.data);
+    } catch (err) {
+      console.error(err);
+      setError("Error fetching productions");
+    }
+  };
+
+  // 🔹 Initial data load
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -27,13 +43,7 @@ export default function DailyProductionTable() {
           if (dieData.status === "success") setDies(dieData.data);
         }
 
-        const prodRes = await fetch(
-          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
-        );
-        if (!prodRes.ok) throw new Error("Failed to fetch daily production");
-        const prodData = await prodRes.json();
-        if (prodData.status === "success") setProductions(prodData.data);
-        else setError("API returned error");
+        await fetchProductions();
       } catch (err) {
         console.error(err);
         setError("Error fetching data");
@@ -44,13 +54,13 @@ export default function DailyProductionTable() {
     fetchData();
   }, []);
 
-  // Map DieId → DieName
+  // 🔹 Map DieId → DieName
   const getDieName = (id) => {
     const found = dies.find((d) => d.DieId === id);
     return found ? found.DieName : id;
   };
 
-  // Delete by sno
+  // 🔹 Delete by sno
   const handleDelete = async (sno) => {
     if (!window.confirm("Are you sure you want to delete this record?")) return;
 
@@ -72,7 +82,7 @@ export default function DailyProductionTable() {
     }
   };
 
-  // Generate all days of month
+  // 🔹 Generate all days of month
   const getDaysInMonth = (year, month) => {
     const days = [];
     const lastDay = new Date(year, month + 1, 0).getDate();
@@ -103,17 +113,15 @@ export default function DailyProductionTable() {
   }
 
   let allDates = getDaysInMonth(yearNum, monthNum);
-
-  // Restrict to today if current month
   if (yearNum === currentYear && monthNum === currentMonth) {
     allDates = allDates.filter((d) => new Date(d) <= today);
   }
 
-  // Map productions by date
+  // 🔹 Map productions by date
   const productionMap = {};
   productions.forEach((p) => (productionMap[p.date] = p));
 
-  // Merge: ensure all dates show
+  // 🔹 Merge: ensure all dates show
   const displayedProductions = allDates
     .map((date) =>
       productionMap[date]
@@ -129,7 +137,7 @@ export default function DailyProductionTable() {
       return true;
     });
 
-  // Summary calculation
+  // 🔹 Summary calculation
   const totalOvertime = displayedProductions.reduce((sum, prod) => {
     if (prod.isMissing || !Array.isArray(prod.overtime)) return sum;
     return (
@@ -144,12 +152,53 @@ export default function DailyProductionTable() {
 
   const finalPay = totalMonthyPay + 13000;
 
+  // 🔹 Date formatting
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
     return `${day}-${month}-${year}`;
+  };
+
+  // 🔹 Handle empty row click
+  const handleEmptyRowClick = async (date) => {
+    const choice = window.confirm(
+      "Click OK to enter data, Cancel to mark as Leave"
+    );
+
+    if (choice) {
+      navigate(`/production?date=${date}`);
+    } else {
+      try {
+        const payload = {
+          DieIds: ["KSD223adbd2"], // 👈 static die for leave
+          ProductionCounts: [0],
+          production_date: date,
+          sub_flag: 1,
+        };
+
+        const response = await fetch(
+          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/add_daily_production",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        const data = await response.json();
+        if (data.status === "success") {
+          await fetchProductions();
+          setLeaveDates((prev) => [...prev, date]);
+        } else {
+          alert("Failed to mark leave");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error marking leave");
+      }
+    }
   };
 
   if (loading) return <p>Loading daily production...</p>;
@@ -160,7 +209,7 @@ export default function DailyProductionTable() {
       <div className="form-card table-card">
         <h2 className="form-title">Daily Production</h2>
 
-        {/* Filters */}
+        {/* 🔹 Filters */}
         <div className="filter-bar">
           <input
             type="text"
@@ -190,7 +239,7 @@ export default function DailyProductionTable() {
           />
         </div>
 
-        {/* Table */}
+        {/* 🔹 Table */}
         <div className="table-responsive">
           <table className="die-table">
             <thead>
@@ -205,23 +254,59 @@ export default function DailyProductionTable() {
               </tr>
             </thead>
             <tbody>
-              {displayedProductions.map((prod) =>
-                prod.isMissing ? (
-                  <tr
-                    key={prod.date}
-                    className="missing-row"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => navigate(`/production?date=${prod.date}`)}
-                  >
-                    <td>
-                      {formatDate(prod.date)}
-                      {new Date(prod.date).getDay() === 0 && (
-                        <div className="sunday-note">Sunday</div>
-                      )}
-                    </td>
-                    <td colSpan="6">No data entered</td>
-                  </tr>
-                ) : (
+              {displayedProductions.map((prod) => {
+                const isHoliday =
+                  !prod.isMissing &&
+                  Array.isArray(prod.overtime) &&
+                  Array.isArray(prod.overall_time) &&
+                  prod.overtime.every((o, i) => o === prod.overall_time[i]);
+
+                // Case: Missing row
+                if (prod.isMissing) {
+                  return (
+                    <tr
+                      key={prod.date}
+                      className={`missing-row ${
+                        leaveDates.includes(prod.date) ? "leave-row" : ""
+                      }`}
+                      onClick={() => handleEmptyRowClick(prod.date)}
+                    >
+                      <td>
+                        {formatDate(prod.date)}
+                        {new Date(prod.date).getDay() === 0 && (
+                          <div className="sunday-note">Sunday</div>
+                        )}
+                      </td>
+                      <td colSpan="6">
+                        {leaveDates.includes(prod.date)
+                          ? "Leave"
+                          : "No data entered"}
+                      </td>
+                    </tr>
+                  );
+                }
+
+                // Case: All DieNames = none → Leave
+                const allNone =
+                  Array.isArray(prod.DieId) &&
+                  prod.DieId.every((id) => {
+                    const die = dies.find((d) => d.DieId === id);
+                    return (
+                      !die || !die.DieName || die.DieName.toLowerCase() === "none"
+                    );
+                  });
+
+                if (allNone) {
+                  return (
+                    <tr key={prod.sno} className="leave-row neutral-row">
+                      <td>{formatDate(prod.date)}</td>
+                      <td colSpan="6">Leave</td>
+                    </tr>
+                  );
+                }
+
+                // Case: Normal production row
+                return (
                   <tr
                     key={prod.sno}
                     onClick={() => setSelectedProduction(prod)}
@@ -229,8 +314,14 @@ export default function DailyProductionTable() {
                   >
                     <td>
                       {formatDate(prod.date)}
-                      {new Date(prod.date).getDay() === 0 && (
-                        <div className="sunday-note">Sunday</div>
+                      {(new Date(prod.date).getDay() === 0 || isHoliday) && (
+                        <div
+                          className={`sunday-note ${
+                            isHoliday ? "holiday-note" : ""
+                          }`}
+                        >
+                          {isHoliday ? "Holiday" : "Sunday"}
+                        </div>
                       )}
                     </td>
                     <td>
@@ -270,13 +361,13 @@ export default function DailyProductionTable() {
                     </td>
                     <td>{prod.monthy_pay}</td>
                   </tr>
-                )
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* Summary */}
+        {/* 🔹 Summary */}
         <div className="summary-card">
           <h3>
             Summary for{" "}
@@ -296,7 +387,7 @@ export default function DailyProductionTable() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* 🔹 Modal */}
       {selectedProduction && (
         <div className="modal-overlay">
           <div className="modal-card">
