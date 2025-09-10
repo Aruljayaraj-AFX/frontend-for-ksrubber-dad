@@ -26,7 +26,7 @@ export default function DieTable() {
         if (data.status === "success") {
           // 🚫 Filter out unwanted DieId
           const filteredDies = data.data.filter(
-            (d) => d.DieId !== "KSD223adbd2" && d.DieId !== "KSDb5391070"
+            (d) => d.DieId !== "KSD223adbd2" && d.DieId !== "KSD522d7a54"
           );
 
           const sortedDies = filteredDies.sort((a, b) =>
@@ -169,30 +169,41 @@ export default function DieTable() {
               </tr>
             </thead>
             <tbody>
-              {currentDies.length === 0 ? (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: "center", padding: "1rem" }}>
-                    No dies found.
-                  </td>
-                </tr>
-              ) : (
-                currentDies.map((die) => (
-                  <tr
-                    key={die.DieId}
-                    onClick={() => handleRowClick(die)}
-                    className="clickable-row"
-                  >
-                    <td>{die.DieName}</td>
-                    <td>{die.Cavity}</td>
-                    <td>{die.Pro_hr_count}</td>
-                    <td>{die.Weight}</td>
-                    <td>{die.Materials}</td>
-                    <td>{die.CompanyName}</td>
-                    <td>{die.Price}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+  {currentDies.length === 0 ? (
+    <tr>
+      <td colSpan="7" style={{ textAlign: "center", padding: "1rem" }}>
+        No dies found.
+      </td>
+    </tr>
+  ) : (
+    currentDies.map((die) => (
+      <tr
+        key={die.DieId}
+        onClick={() => handleRowClick(die)}
+        className={`clickable-row ${die.MaintainanceName ? "maintenance-row" : ""}`}
+      >
+        {die.MaintainanceName ? (
+          // 🔹 Show Maintenance row
+          <td colSpan="7" style={{ textAlign: "center", fontWeight: "bold", color: "red" }}>
+            🚧 Maintenance: {die.MaintainanceName}
+          </td>
+        ) : (
+          // 🔹 Show Normal details
+          <>
+            <td>{die.DieName}</td>
+            <td>{die.Cavity}</td>
+            <td>{die.Pro_hr_count}</td>
+            <td>{die.Weight}</td>
+            <td>{die.Materials}</td>
+            <td>{die.CompanyName}</td>
+            <td>{die.Price}</td>
+          </>
+        )}
+      </tr>
+    ))
+  )}
+</tbody>
+
           </table>
         </div>
 

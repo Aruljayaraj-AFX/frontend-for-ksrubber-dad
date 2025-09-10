@@ -278,3 +278,9 @@
 .close-btn:hover {
   color: #d9534f; /* soft red on hover */
 }
+
+
+.maintenance-row {
+  background-color: #ffeaea;
+  color: #c00;
+}
