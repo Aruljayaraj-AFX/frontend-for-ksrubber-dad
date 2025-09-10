@@ -298,7 +298,12 @@ export default function DailyProductionTable() {
 
                 if (allNone) {
                   return (
-                    <tr key={prod.sno} className="leave-row neutral-row">
+                    <tr
+                      key={prod.sno}
+                      className="leave-row neutral-row"
+                      onClick={() => setSelectedProduction(prod)}
+                      style={{ cursor: "pointer" }}
+                    >
                       <td>{formatDate(prod.date)}</td>
                       <td colSpan="6">Leave</td>
                     </tr>
@@ -401,64 +406,77 @@ export default function DailyProductionTable() {
               Production Detail - {formatDate(selectedProduction.date)}
             </h3>
 
-            <div className="modal-details">
-              <div className="detail-row">
-                <span className="detail-label">Dies</span>
-                <span className="detail-value">
-                  <ul>
-                    {selectedProduction.DieId.map((id, i) => (
-                      <li key={i}>{getDieName(id)}</li>
-                    ))}
-                  </ul>
-                </span>
+            {/* ✅ Show Leave info if DieName = none */}
+            {selectedProduction.DieId &&
+            selectedProduction.DieId.every(
+              (id) => getDieName(id).toLowerCase() === "none"
+            ) ? (
+              <div className="modal-details">
+                <div className="detail-row">
+                  <span className="detail-label">Status</span>
+                  <span className="detail-value">Leave</span>
+                </div>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Overall Production</span>
-                <span className="detail-value">
-                  <ul>
-                    {selectedProduction.overall_production.map((p, i) => (
-                      <li key={i}>{p}</li>
-                    ))}
-                  </ul>
-                </span>
+            ) : (
+              <div className="modal-details">
+                <div className="detail-row">
+                  <span className="detail-label">Dies</span>
+                  <span className="detail-value">
+                    <ul>
+                      {selectedProduction.DieId.map((id, i) => (
+                        <li key={i}>{getDieName(id)}</li>
+                      ))}
+                    </ul>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Overall Production</span>
+                  <span className="detail-value">
+                    <ul>
+                      {selectedProduction.overall_production.map((p, i) => (
+                        <li key={i}>{p}</li>
+                      ))}
+                    </ul>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Overall Time (hr)</span>
+                  <span className="detail-value">
+                    <ul>
+                      {selectedProduction.overall_time.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Overtime</span>
+                  <span className="detail-value">
+                    <ul>
+                      {selectedProduction.overtime.map((o, i) => (
+                        <li key={i}>{o}</li>
+                      ))}
+                    </ul>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Prices</span>
+                  <span className="detail-value">
+                    <ul>
+                      {selectedProduction.price.map((p, i) => (
+                        <li key={i}>{p}</li>
+                      ))}
+                    </ul>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Monthly Pay</span>
+                  <span className="detail-value">
+                    {selectedProduction.monthy_pay}
+                  </span>
+                </div>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Overall Time (hr)</span>
-                <span className="detail-value">
-                  <ul>
-                    {selectedProduction.overall_time.map((t, i) => (
-                      <li key={i}>{t}</li>
-                    ))}
-                  </ul>
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Overtime</span>
-                <span className="detail-value">
-                  <ul>
-                    {selectedProduction.overtime.map((o, i) => (
-                      <li key={i}>{o}</li>
-                    ))}
-                  </ul>
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Prices</span>
-                <span className="detail-value">
-                  <ul>
-                    {selectedProduction.price.map((p, i) => (
-                      <li key={i}>{p}</li>
-                    ))}
-                  </ul>
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Monthly Pay</span>
-                <span className="detail-value">
-                  {selectedProduction.monthy_pay}
-                </span>
-              </div>
-            </div>
+            )}
 
             <div className="detail-actions">
               <button

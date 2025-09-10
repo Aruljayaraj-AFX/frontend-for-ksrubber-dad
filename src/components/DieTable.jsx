@@ -26,7 +26,7 @@ export default function DieTable() {
         if (data.status === "success") {
           // 🚫 Filter out unwanted DieId
           const filteredDies = data.data.filter(
-            (d) => d.DieId !== "KSD223adbd2"
+            (d) => d.DieId !== "KSD223adbd2" && d.DieId !== "KSDb5391070"
           );
 
           const sortedDies = filteredDies.sort((a, b) => {

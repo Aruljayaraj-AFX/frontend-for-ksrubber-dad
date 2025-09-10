@@ -9,64 +9,50 @@ export default function AddDieForm() {
     cavity: "",
     weight: "",
     productionPerHour: "",
-    price: 38,
+    price: 38, // ✅ default price
   });
 
   const [companies, setCompanies] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [customCompany, setCustomCompany] = useState(""); // 🔹 separate custom input
-  const [customMaterial, setCustomMaterial] = useState(""); // 🔹 separate custom input
+  const [customCompany, setCustomCompany] = useState("");
+  const [customMaterial, setCustomMaterial] = useState("");
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const fetchDies = async () => {
-      try {
-        const response = await fetch(
-          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
-        );
-        if (!response.ok) throw new Error("Failed to fetch dies");
-        const data = await response.json();
+  // 🔹 Fetch dies on mount
+  const fetchDies = async () => {
+    try {
+      const response = await fetch(
+        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+      );
+      if (!response.ok) throw new Error("Failed to fetch dies");
+      const data = await response.json();
 
-        if (data.status === "success") {
-          const dies = data.data;
-          const uniqueCompanies = [
-            ...new Set(dies.map((d) => d.CompanyName).filter(Boolean)),
-          ];
-          const uniqueMaterials = [
-            ...new Set(dies.map((d) => d.Materials).filter(Boolean)),
-          ];
-          setCompanies(uniqueCompanies);
-          setMaterials(uniqueMaterials);
-        }
-      } catch (err) {
-        console.error(err);
+      if (data.status === "success") {
+        const dies = data.data;
+        setCompanies([
+          ...new Set(dies.map((d) => d.CompanyName).filter(Boolean)),
+        ]);
+        setMaterials([
+          ...new Set(dies.map((d) => d.Materials).filter(Boolean)),
+        ]);
       }
-    };
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
+  useEffect(() => {
     fetchDies();
   }, []);
 
-  // 🔹 Scroll to bottom on mount
+  // 🔹 Auto scroll to bottom whenever message changes
   useEffect(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth",
-    });
-  }, []);
-
-  // 🔹 Scroll to bottom when message appears
-  useEffect(() => {
-    if (message) {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "smooth",
-      });
-    }
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }, [message]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -97,7 +83,7 @@ export default function AddDieForm() {
       const data = await response.json();
       setMessage(`✅ Successfully Added! Die ID: ${data.DieId}`);
 
-      // reset form
+      // reset form (keep default price = 38)
       setForm({
         name: "",
         company: "",
@@ -105,15 +91,15 @@ export default function AddDieForm() {
         cavity: "",
         weight: "",
         productionPerHour: "",
-        price: "",
+        price: 38,
       });
       setCustomCompany("");
       setCustomMaterial("");
 
-      setTimeout(() => {
-        setMessage("");
-        window.location.reload();
-      }, 20000);
+      // 🔹 Instead of reload → refresh dropdowns
+      fetchDies();
+
+      setTimeout(() => setMessage(""), 10000);
     } catch (error) {
       console.error(error);
       setMessage("❌ Error adding die. Please try again.");
@@ -145,6 +131,7 @@ export default function AddDieForm() {
             <input
               id="cavity"
               type="number"
+              min="0"
               name="cavity"
               value={form.cavity}
               onChange={handleChange}
@@ -159,6 +146,7 @@ export default function AddDieForm() {
             <input
               id="weight"
               type="number"
+              min="0"
               step="0.01"
               name="weight"
               value={form.weight}
@@ -167,7 +155,7 @@ export default function AddDieForm() {
             />
           </div>
 
-          {/* Material Name */}
+          {/* Material */}
           <div className="form-group">
             <label htmlFor="material">Material Name</label>
             <select
@@ -197,7 +185,7 @@ export default function AddDieForm() {
             )}
           </div>
 
-          {/* Company Name */}
+          {/* Company */}
           <div className="form-group">
             <label htmlFor="company">Company Name</label>
             <select
@@ -233,6 +221,7 @@ export default function AddDieForm() {
             <input
               id="productionPerHour"
               type="number"
+              min="0"
               name="productionPerHour"
               value={form.productionPerHour}
               onChange={handleChange}
@@ -247,6 +236,7 @@ export default function AddDieForm() {
             <input
               id="price"
               type="number"
+              min="0"
               step="0.01"
               name="price"
               value={form.price}
