@@ -29,15 +29,12 @@ export default function DieTable() {
             (d) => d.DieId !== "KSD223adbd2" && d.DieId !== "KSDb5391070"
           );
 
-          const sortedDies = filteredDies.sort((a, b) => {
-            const cmpCompany = a.CompanyName.localeCompare(b.CompanyName);
-            if (cmpCompany !== 0) return cmpCompany;
-            // Natural sort for die name
-            return a.DieName.localeCompare(b.DieName, undefined, {
+          const sortedDies = filteredDies.sort((a, b) =>
+            a.DieName.localeCompare(b.DieName, undefined, {
               numeric: true,
               sensitivity: "base",
-            });
-          });
+            })
+          );
 
           setDies(sortedDies);
 
@@ -163,11 +160,11 @@ export default function DieTable() {
             <thead>
               <tr>
                 <th>Die Name</th>
-                <th>Company</th>
-                <th>Material</th>
                 <th>Cavity</th>
-                <th>Weight (kg)</th>
                 <th>Production/hr</th>
+                <th>Weight (kg)</th>
+                <th>Material</th>
+                <th>Company</th>
                 <th>Price/unit</th>
               </tr>
             </thead>
@@ -186,11 +183,11 @@ export default function DieTable() {
                     className="clickable-row"
                   >
                     <td>{die.DieName}</td>
-                    <td>{die.CompanyName}</td>
-                    <td>{die.Materials}</td>
                     <td>{die.Cavity}</td>
-                    <td>{die.Weight}</td>
                     <td>{die.Pro_hr_count}</td>
+                    <td>{die.Weight}</td>
+                    <td>{die.Materials}</td>
+                    <td>{die.CompanyName}</td>
                     <td>{die.Price}</td>
                   </tr>
                 ))
@@ -238,30 +235,25 @@ export default function DieTable() {
                   />
                 </div>
                 <div className="detail-item">
-                  <strong>Company:</strong>
-                  <input
-                    value={editData.CompanyName}
-                    onChange={(e) =>
-                      setEditData({ ...editData, CompanyName: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="detail-item">
-                  <strong>Material:</strong>
-                  <input
-                    value={editData.Materials}
-                    onChange={(e) =>
-                      setEditData({ ...editData, Materials: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="detail-item">
                   <strong>Cavity:</strong>
                   <input
                     type="number"
                     value={editData.Cavity}
                     onChange={(e) =>
                       setEditData({ ...editData, Cavity: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <div className="detail-item">
+                  <strong>Production/hr:</strong>
+                  <input
+                    type="number"
+                    value={editData.Pro_hr_count}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        Pro_hr_count: Number(e.target.value),
+                      })
                     }
                   />
                 </div>
@@ -276,15 +268,20 @@ export default function DieTable() {
                   />
                 </div>
                 <div className="detail-item">
-                  <strong>Production/hr:</strong>
+                  <strong>Material:</strong>
                   <input
-                    type="number"
-                    value={editData.Pro_hr_count}
+                    value={editData.Materials}
                     onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        Pro_hr_count: Number(e.target.value),
-                      })
+                      setEditData({ ...editData, Materials: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="detail-item">
+                  <strong>Company:</strong>
+                  <input
+                    value={editData.CompanyName}
+                    onChange={(e) =>
+                      setEditData({ ...editData, CompanyName: e.target.value })
                     }
                   />
                 </div>
@@ -311,19 +308,22 @@ export default function DieTable() {
             ) : (
               <>
                 <div className="detail-item">
-                  <strong>Company:</strong> {selectedDie.CompanyName}
-                </div>
-                <div className="detail-item">
-                  <strong>Material:</strong> {selectedDie.Materials}
+                  <strong>Die Name:</strong> {selectedDie.DieName}
                 </div>
                 <div className="detail-item">
                   <strong>Cavity:</strong> {selectedDie.Cavity}
                 </div>
                 <div className="detail-item">
+                  <strong>Production/hr:</strong> {selectedDie.Pro_hr_count}
+                </div>
+                <div className="detail-item">
                   <strong>Weight:</strong> {selectedDie.Weight} kg
                 </div>
                 <div className="detail-item">
-                  <strong>Production/hr:</strong> {selectedDie.Pro_hr_count}
+                  <strong>Material:</strong> {selectedDie.Materials}
+                </div>
+                <div className="detail-item">
+                  <strong>Company:</strong> {selectedDie.CompanyName}
                 </div>
                 <div className="detail-item">
                   <strong>Price/unit:</strong> {selectedDie.Price}
