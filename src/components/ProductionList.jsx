@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useRef} from "react";
 import { useNavigate } from "react-router-dom"; // for redirect
 import "./ProductionList.css";
+import { toPng } from "html-to-image";  
 
 export default function DailyProductionTable() {
   const [productions, setProductions] = useState([]);
@@ -13,8 +14,74 @@ export default function DailyProductionTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [showDownloadPopup, setShowDownloadPopup] = useState(false);
+
 
   const navigate = useNavigate();
+  const tableRef = useRef(); 
+  const summaryRef = useRef(null);
+
+  const handleDownloadSummary = () => {
+  if (!summaryRef.current) return;
+
+  toPng(summaryRef.current)
+    .then((dataUrl) => {
+      const link = document.createElement("a");
+      link.download = "summary.png";
+      link.href = dataUrl;
+      link.click();
+    })
+    .finally(() => setShowDownloadPopup(false));
+};
+
+  const handleDownloadPng = () => {
+  if (!tableRef.current) return;
+
+  const rows = tableRef.current.querySelectorAll("tr");
+  const hidden = [];
+  const added = [];
+
+  rows.forEach((row) => {
+    const cells = Array.from(row.querySelectorAll("th, td"));
+
+    // CASE: Leave / No data rows → 2 cells only
+    if (cells.length === 2 && cells[1].colSpan === 6) {
+      // keep only date, create fake Dies + Production cells
+      const fakeDies = document.createElement("td");
+      fakeDies.textContent = cells[1].textContent === "Leave" ? "Leave" : "No data";
+      const fakeProd = document.createElement("td");
+      fakeProd.textContent = "-";
+      row.insertBefore(fakeDies, cells[1].nextSibling);
+      row.insertBefore(fakeProd, fakeDies.nextSibling);
+      cells[1].style.display = "none"; // hide big colSpan cell
+      hidden.push(cells[1]);
+      added.push(fakeDies, fakeProd);
+    }
+
+    // CASE: normal data rows → hide other columns (index 3+)
+    cells.forEach((cell, i) => {
+      if (cells.length > 3 && ![0, 1, 2].includes(i)) {
+        hidden.push(cell);
+        cell.style.display = "none";
+      }
+    });
+  });
+
+  toPng(tableRef.current)
+    .then((dataUrl) => {
+      const link = document.createElement("a");
+      link.download = "production.png";
+      link.href = dataUrl;
+      link.click();
+    })
+    .catch((err) => console.error("PNG export failed", err))
+    .finally(() => {
+      // Restore all hidden/added cells
+      hidden.forEach((cell) => (cell.style.display = ""));
+      added.forEach((cell) => cell.remove());
+    });
+};
+
 
   // 🔹 Fetch productions
   const fetchProductions = async () => {
@@ -240,7 +307,7 @@ export default function DailyProductionTable() {
         </div>
 
         {/* 🔹 Table */}
-        <div className="table-responsive">
+        <div className="table-responsive" ref={tableRef}>
           <table className="die-table">
             <thead>
               <tr>
@@ -373,7 +440,7 @@ export default function DailyProductionTable() {
         </div>
 
         {/* 🔹 Summary */}
-        <div className="summary-card">
+        <div className="summary-card" ref={summaryRef}>
           <h3>
             Summary for{" "}
             {selectedMonth ||
@@ -390,6 +457,34 @@ export default function DailyProductionTable() {
             Final Pay (+13,000): <b>{finalPay}</b>
           </p>
         </div>
+        {/* 🔹 Floating download button */}
+<button
+  className="floating-download-btn"
+  onClick={() => setShowDownloadPopup(true)}
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="#fff"
+    viewBox="0 0 24 24"
+    width="28"
+    height="28"
+  >
+    <path d="M16.988 15.408c-.272-.136-1.616-.8-1.864-.888-.248-.092-.432-.136-.616.136-.184.272-.712.888-.872 1.072-.16.184-.32.208-.592.072-.272-.136-1.152-.424-2.192-1.352-.81-.72-1.356-1.608-1.516-1.88-.16-.272-.017-.416.12-.552.124-.124.272-.32.408-.48.136-.16.184-.272.272-.456.092-.184.044-.344-.02-.48-.064-.136-.616-1.488-.84-2.04-.224-.544-.448-.472-.616-.48-.16-.008-.344-.008-.528-.008s-.48.072-.728.344c-.248.272-.952.928-.952 2.264s.976 2.624 1.112 2.808c.136.184 1.92 2.928 4.656 4.104.652.28 1.16.448 1.556.576.652.208 1.248.176 1.72.108.524-.08 1.616-.656 1.848-1.288.232-.632.232-1.176.16-1.288-.072-.112-.264-.184-.536-.32zm-4.988 6.592c-1.664 0-3.296-.448-4.72-1.296l-3.288 1.04.984-3.208c-.896-1.504-1.368-3.224-1.368-4.984 0-5.504 4.48-9.984 9.984-9.984 2.664 0 5.176 1.04 7.064 2.92 1.88 1.88 2.92 4.392 2.92 7.064 0 5.504-4.48 9.984-9.984 9.984z" />
+  </svg>
+</button>
+
+{/* 🔹 Download popup */}
+{showDownloadPopup && (
+  <div className="popup-overlay">
+    <div className="popup-card">
+      <h4>Select Download Option</h4>
+      <button onClick={handleDownloadPng}>📋 Table (Date/Dies/Production)</button>
+      <button onClick={handleDownloadSummary}>📑 Summary Only</button>
+      <button onClick={() => setShowDownloadPopup(false)}>❌ Cancel</button>
+    </div>
+  </div>
+)}
+
       </div>
 
       {/* 🔹 Modal */}
