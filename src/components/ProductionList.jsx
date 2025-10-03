@@ -21,65 +21,61 @@ export default function DailyProductionTable() {
   const tableRef = useRef(); 
   const summaryRef = useRef(null);
 
-  const handleDownloadSummary = () => {
-  if (!summaryRef.current) return;
+  const handleSendWhatsApp = () => {
+  const monthName = new Date(yearNum, monthNum).toLocaleString("default", {
+    month: "long",
+  });
+  const title = `📅 Daily Production - ${monthName} ${yearNum}\n\n`;
 
-  toPng(summaryRef.current)
-    .then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = "summary.png";
-      link.href = dataUrl;
-      link.click();
-    })
-    .finally(() => setShowDownloadPopup(false));
-};
+  let message = title;
 
-  const handleDownloadPng = () => {
-  if (!tableRef.current) return;
+  displayedProductions.forEach((prod) => {
+    const formattedDate = formatDate(prod.date);
+    message += `🗓 ${formattedDate}\n`;
 
-  const rows = tableRef.current.querySelectorAll("tr");
-  const hidden = [];
-  const added = [];
+    if (prod.isMissing) {
+      // 🔸 Missing / No data
+      const isLeave = leaveDates.includes(prod.date);
+      message += `• ${isLeave ? "Leave" : "No Data / Not Entered"}\n\n`;
+    } else {
+      // 🔸 Check if all DieIds are "none" → Leave
+      const allNone =
+        Array.isArray(prod.DieId) &&
+        prod.DieId.every((id) => {
+          const die = dies.find((d) => d.DieId === id);
+          return (
+            !die ||
+            !die.DieName ||
+            die.DieName.trim().toLowerCase() === "none"
+          );
+        });
 
-  rows.forEach((row) => {
-    const cells = Array.from(row.querySelectorAll("th, td"));
+      if (allNone) {
+        message += `• Leave\n\n`;
+      } else {
+        // 🔸 Normal production entry
+        const dieNames = prod.DieId.map((id) => getDieName(id)).join(", ");
+        const totalProduction = Array.isArray(prod.overall_production)
+          ? prod.overall_production.reduce(
+              (sum, p) => sum + (parseFloat(p) || 0),
+              0
+            )
+          : 0;
 
-    // CASE: Leave / No data rows → 2 cells only
-    if (cells.length === 2 && cells[1].colSpan === 6) {
-      // keep only date, create fake Dies + Production cells
-      const fakeDies = document.createElement("td");
-      fakeDies.textContent = cells[1].textContent === "Leave" ? "Leave" : "No data";
-      const fakeProd = document.createElement("td");
-      fakeProd.textContent = "-";
-      row.insertBefore(fakeDies, cells[1].nextSibling);
-      row.insertBefore(fakeProd, fakeDies.nextSibling);
-      cells[1].style.display = "none"; // hide big colSpan cell
-      hidden.push(cells[1]);
-      added.push(fakeDies, fakeProd);
-    }
-
-    // CASE: normal data rows → hide other columns (index 3+)
-    cells.forEach((cell, i) => {
-      if (cells.length > 3 && ![0, 1, 2].includes(i)) {
-        hidden.push(cell);
-        cell.style.display = "none";
+        message += `• Work: ${dieNames}\n`;
+        message += `• Production: ${totalProduction}\n\n`;
       }
-    });
+    }
   });
 
-  toPng(tableRef.current)
-    .then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = "production.png";
-      link.href = dataUrl;
-      link.click();
-    })
-    .catch((err) => console.error("PNG export failed", err))
-    .finally(() => {
-      // Restore all hidden/added cells
-      hidden.forEach((cell) => (cell.style.display = ""));
-      added.forEach((cell) => cell.remove());
-    });
+  message += `📊 Summary\n`;
+  message += `• Total Overtime: ${totalOvertime}\n`;
+  message += `• Total Monthly Pay: ₹${totalMonthyPay}\n`;
+  message += `• Final Pay (+₹13,000): ₹${finalPay}`;
+
+  const encodedText = encodeURIComponent(message);
+  const whatsappURL = `https://wa.me/917299900975?text=${encodedText}`; // 👈 replace number
+  window.open(whatsappURL, "_blank");
 };
 
 
@@ -459,21 +455,36 @@ export default function DailyProductionTable() {
         </div>
         {/* 🔹 Floating download button */}
 <button
-  className="floating-download-btn"
-  onClick={() => setShowDownloadPopup(true)}
+  className="floating-whatsapp-btn"
+  onClick={handleSendWhatsApp}
+  style={{
+    position: "fixed",
+    bottom: "80px",
+    right: "20px",
+    backgroundColor: "#25D366",
+    border: "none",
+    borderRadius: "50%",
+    width: "50px",
+    height: "50px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    cursor: "pointer",
+  }}
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    fill="#fff"
-    viewBox="0 0 24 24"
+    viewBox="0 0 32 32"
     width="28"
     height="28"
+    fill="#fff"
   >
-    <path d="M16.988 15.408c-.272-.136-1.616-.8-1.864-.888-.248-.092-.432-.136-.616.136-.184.272-.712.888-.872 1.072-.16.184-.32.208-.592.072-.272-.136-1.152-.424-2.192-1.352-.81-.72-1.356-1.608-1.516-1.88-.16-.272-.017-.416.12-.552.124-.124.272-.32.408-.48.136-.16.184-.272.272-.456.092-.184.044-.344-.02-.48-.064-.136-.616-1.488-.84-2.04-.224-.544-.448-.472-.616-.48-.16-.008-.344-.008-.528-.008s-.48.072-.728.344c-.248.272-.952.928-.952 2.264s.976 2.624 1.112 2.808c.136.184 1.92 2.928 4.656 4.104.652.28 1.16.448 1.556.576.652.208 1.248.176 1.72.108.524-.08 1.616-.656 1.848-1.288.232-.632.232-1.176.16-1.288-.072-.112-.264-.184-.536-.32zm-4.988 6.592c-1.664 0-3.296-.448-4.72-1.296l-3.288 1.04.984-3.208c-.896-1.504-1.368-3.224-1.368-4.984 0-5.504 4.48-9.984 9.984-9.984 2.664 0 5.176 1.04 7.064 2.92 1.88 1.88 2.92 4.392 2.92 7.064 0 5.504-4.48 9.984-9.984 9.984z" />
+    <path d="M16 .4C7.4.4.4 7.4.4 16c0 2.8.7 5.5 2.1 7.9L.4 31.6l8-2.1C11 30.9 13.4 31.6 16 31.6c8.6 0 15.6-7 15.6-15.6S24.6.4 16 .4zm0 28.5c-2.3 0-4.6-.6-6.5-1.8l-.5-.3-4.7 1.3 1.3-4.6-.3-.5C4 20.9 3.3 18.5 3.3 16 3.3 8.6 8.6 3.3 16 3.3S28.7 8.6 28.7 16 23.4 28.9 16 28.9z"/>
+    <path d="M24.1 19.8c-.4-.2-2.3-1.1-2.7-1.2-.4-.1-.7-.2-1 .2-.3.4-1 1.2-1.2 1.4-.2.2-.4.3-.8.1-1.4-.5-2.6-1.7-3.3-3.1-.1-.3 0-.5.1-.7.2-.2.4-.4.5-.6.2-.2.3-.4.4-.6.1-.2.1-.5 0-.7-.1-.2-.9-2.3-1.2-3.1-.3-.8-.6-.7-.9-.8H12c-.3 0-.7 0-1 .5-.4.4-1.3 1.2-1.3 3s1.3 3.4 1.5 3.6c.2.2 2.7 4 6.5 5.6.9.4 1.7.7 2.3.8.9.1 1.7.1 2.3-.3.6-.3 2-1.5 2.3-2.3.3-.8.3-1.5.2-1.7-.1-.1-.3-.2-.7-.4z"/>
   </svg>
 </button>
 
-{/* 🔹 Download popup */}
 {showDownloadPopup && (
   <div className="popup-overlay">
     <div className="popup-card">
