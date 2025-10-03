@@ -55,15 +55,12 @@ export default function DailyProductionTable() {
       } else {
         // 🔸 Normal production entry
         const dieNames = prod.DieId.map((id) => getDieName(id)).join(", ");
-        const totalProduction = Array.isArray(prod.overall_production)
-          ? prod.overall_production.reduce(
-              (sum, p) => sum + (parseFloat(p) || 0),
-              0
-            )
-          : 0;
+        const productionCounts = Array.isArray(prod.overall_production)
+  ? prod.overall_production.join(", ")
+  : "-";
 
-        message += `• Work: ${dieNames}\n`;
-        message += `• Production: ${totalProduction}\n\n`;
+message += `• Work: ${dieNames}\n`;
+message += `• Production: ${productionCounts}\n\n`;
       }
     }
   });
