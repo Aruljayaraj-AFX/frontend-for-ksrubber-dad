@@ -74,7 +74,7 @@ export default function DailyProductionTable() {
   message += `• Final Pay (+₹13,000): ₹${finalPay}`;
 
   const encodedText = encodeURIComponent(message);
-  const whatsappURL = `https://wa.me/919884922901?text=${encodedText}`; // 👈 replace number
+  const whatsappURL = `https://wa.me/917299422096?text=${encodedText}`; // 👈 replace number
   window.open(whatsappURL, "_blank");
 };
 
