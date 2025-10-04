@@ -1,7 +1,9 @@
 import { useEffect, useState ,useRef} from "react";
 import { useNavigate } from "react-router-dom"; // for redirect
 import "./ProductionList.css";
-import { toPng } from "html-to-image";  
+import { toPng } from "html-to-image"; 
+import jsPDF from "jspdf";
+import "jspdf-autotable"; 
 
 export default function DailyProductionTable() {
   const [productions, setProductions] = useState([]);
@@ -21,60 +23,65 @@ export default function DailyProductionTable() {
   const tableRef = useRef(); 
   const summaryRef = useRef(null);
 
-  const handleSendWhatsApp = () => {
+  const handleSendPDF = () => {
+  const doc = new jsPDF();
+
   const monthName = new Date(yearNum, monthNum).toLocaleString("default", {
     month: "long",
   });
-  const title = `📅 Daily Production - ${monthName} ${yearNum}\n\n`;
+  const title = `Daily Production - ${monthName} ${yearNum}`;
+  doc.setFontSize(16);
+  doc.text(title, 14, 20);
 
-  let message = title;
-
-  displayedProductions.forEach((prod) => {
+  // Prepare table rows
+  const rows = displayedProductions.map((prod) => {
     const formattedDate = formatDate(prod.date);
-    message += `🗓 ${formattedDate}\n`;
 
     if (prod.isMissing) {
-      // 🔸 Missing / No data
       const isLeave = leaveDates.includes(prod.date);
-      message += `• ${isLeave ? "Leave" : "No Data / Not Entered"}\n\n`;
+      return [formattedDate, isLeave ? "Leave" : "No Data / Not Entered", "-", "-"];
     } else {
-      // 🔸 Check if all DieIds are "none" → Leave
       const allNone =
         Array.isArray(prod.DieId) &&
         prod.DieId.every((id) => {
           const die = dies.find((d) => d.DieId === id);
-          return (
-            !die ||
-            !die.DieName ||
-            die.DieName.trim().toLowerCase() === "none"
-          );
+          return !die || !die.DieName || die.DieName.trim().toLowerCase() === "none";
         });
 
       if (allNone) {
-        message += `• Leave\n\n`;
+        return [formattedDate, "Leave", "-", "-"];
       } else {
-        // 🔸 Normal production entry
         const dieNames = prod.DieId.map((id) => getDieName(id)).join(", ");
         const productionCounts = Array.isArray(prod.overall_production)
-  ? prod.overall_production.join(", ")
-  : "-";
-
-message += `• Work: ${dieNames}\n`;
-message += `• Production: ${productionCounts}\n\n`;
+          ? prod.overall_production.join(", ")
+          : "-";
+        return [formattedDate, "Work", dieNames, productionCounts];
       }
     }
   });
 
-  message += `📊 Summary\n`;
-  message += `• Total Overtime: ${totalOvertime}\n`;
-  message += `• Total Monthly Pay: ₹${totalMonthyPay}\n`;
-  message += `• Final Pay (+₹13,000): ₹${finalPay}`;
+  // Table headers
+  const headers = [["Date", "Status", "Work", "Production"]];
 
-  const encodedText = encodeURIComponent(message);
-  const whatsappURL = `https://wa.me/917299422096?text=${encodedText}`; // 👈 replace number
-  window.open(whatsappURL, "_blank");
+  doc.autoTable({
+    head: headers,
+    body: rows,
+    startY: 30,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [22, 160, 133] },
+  });
+
+  // Add summary at the end
+  const finalY = doc.lastAutoTable.finalY || 30;
+  doc.setFontSize(12);
+  doc.text("Summary", 14, finalY + 10);
+  doc.text(`Total Overtime: ${totalOvertime}`, 14, finalY + 20);
+  doc.text(`Total Monthly Pay: ₹${totalMonthyPay}`, 14, finalY + 30);
+  doc.text(`Final Pay (+₹13,000): ₹${finalPay}`, 14, finalY + 40);
+
+  // Save or open PDF
+  doc.save(`Daily_Production_${monthName}_${yearNum}.pdf`);
 };
-
 
   // 🔹 Fetch productions
   const fetchProductions = async () => {
