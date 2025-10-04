@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"; // for redirect
 import "./ProductionList.css";
 import { toPng } from "html-to-image"; 
 import jsPDF from "jspdf";
-import "jspdf-autotable"; 
+import autoTable from "jspdf-autotable";
 
 export default function DailyProductionTable() {
   const [productions, setProductions] = useState([]);
@@ -23,23 +23,27 @@ export default function DailyProductionTable() {
   const tableRef = useRef(); 
   const summaryRef = useRef(null);
 
-  const handleSendPDF = () => {
-  const doc = new jsPDF();
+ 
+const handleSendWhatsApp = () => {
+  const doc = new jsPDF("p", "mm", "a4"); // portrait, mm, A4
 
   const monthName = new Date(yearNum, monthNum).toLocaleString("default", {
     month: "long",
   });
   const title = `Daily Production - ${monthName} ${yearNum}`;
-  doc.setFontSize(16);
-  doc.text(title, 14, 20);
+  doc.setFontSize(14);
+  doc.text(title, 14, 15);
 
   // Prepare table rows
   const rows = displayedProductions.map((prod) => {
     const formattedDate = formatDate(prod.date);
 
+    let status = "";
+    let partNames = "-";
+    let productionCounts = "-";
+
     if (prod.isMissing) {
-      const isLeave = leaveDates.includes(prod.date);
-      return [formattedDate, isLeave ? "Leave" : "No Data / Not Entered", "-", "-"];
+      status = leaveDates.includes(prod.date) ? "Leave" : "No Data / Not Entered";
     } else {
       const allNone =
         Array.isArray(prod.DieId) &&
@@ -49,41 +53,43 @@ export default function DailyProductionTable() {
         });
 
       if (allNone) {
-        return [formattedDate, "Leave", "-", "-"];
+        status = "Leave";
       } else {
-        const dieNames = prod.DieId.map((id) => getDieName(id)).join(", ");
-        const productionCounts = Array.isArray(prod.overall_production)
+        partNames = prod.DieId.map((id) => getDieName(id)).join(", ");
+        productionCounts = Array.isArray(prod.overall_production)
           ? prod.overall_production.join(", ")
           : "-";
-        return [formattedDate, "Work", dieNames, productionCounts];
+        status = "Work";
       }
     }
+
+    return [formattedDate, partNames, productionCounts, status];
   });
 
-  // Table headers
-  const headers = [["Date", "Status", "Work", "Production"]];
+  const headers = [["Date", "Part Names", "Production", "Status"]];
 
-  doc.autoTable({
+  // Generate table
+  autoTable(doc, {
     head: headers,
     body: rows,
-    startY: 30,
-    styles: { fontSize: 10 },
+    startY: 20,
+    styles: { fontSize: 8, cellPadding: 2 }, // smaller font and padding
     headStyles: { fillColor: [22, 160, 133] },
+    theme: "grid",
+    pageBreak: "avoid", // try to keep all rows in one page
   });
 
-  // Add summary at the end
-  const finalY = doc.lastAutoTable.finalY || 30;
-  doc.setFontSize(12);
-  doc.text("Summary", 14, finalY + 10);
-  doc.text(`Total Overtime: ${totalOvertime}`, 14, finalY + 20);
-  doc.text(`Total Monthly Pay: ₹${totalMonthyPay}`, 14, finalY + 30);
-  doc.text(`Final Pay (+₹13,000): ₹${finalPay}`, 14, finalY + 40);
+  // Add summary below table
+  const finalY = doc.lastAutoTable?.finalY || 20;
+  doc.setFontSize(10);
+  doc.text("📊 Summary", 14, finalY + 8);
+  doc.text(`• Total Overtime: ${totalOvertime}`, 14, finalY + 16);
+  doc.text(`• Total Monthly Pay: ₹${totalMonthyPay}`, 14, finalY + 24);
+  doc.text(`• Final Pay (+₹13,000): ₹${finalPay}`, 14, finalY + 32);
 
-  // Save or open PDF
   doc.save(`Daily_Production_${monthName}_${yearNum}.pdf`);
 };
-
-  // 🔹 Fetch productions
+// 🔹 Fetch productions
   const fetchProductions = async () => {
     try {
       const prodRes = await fetch(
