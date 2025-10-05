@@ -23,7 +23,6 @@ export default function DailyProductionTable() {
   const tableRef = useRef(); 
   const summaryRef = useRef(null);
 
- 
 const handleSendWhatsApp = () => {
   const doc = new jsPDF("p", "mm", "a4"); // portrait, mm, A4
 
@@ -34,17 +33,17 @@ const handleSendWhatsApp = () => {
   doc.setFontSize(14);
   doc.text(title, 14, 15);
 
-  // Prepare table rows
-  const rows = displayedProductions.map((prod) => {
+  // Prepare table rows without status column
+  const rows = displayedProductions.flatMap((prod) => {
     const formattedDate = formatDate(prod.date);
+    const day = new Date(prod.date).getDay(); // 0 = Sunday
+    const isSunday = day === 0;
+    const isLeave = leaveDates.includes(prod.date);
 
-    let status = "";
     let partNames = "-";
     let productionCounts = "-";
 
-    if (prod.isMissing) {
-      status = leaveDates.includes(prod.date) ? "Leave" : "No Data / Not Entered";
-    } else {
+    if (!prod.isMissing) {
       const allNone =
         Array.isArray(prod.DieId) &&
         prod.DieId.every((id) => {
@@ -52,43 +51,71 @@ const handleSendWhatsApp = () => {
           return !die || !die.DieName || die.DieName.trim().toLowerCase() === "none";
         });
 
-      if (allNone) {
-        status = "Leave";
-      } else {
-        partNames = prod.DieId.map((id) => getDieName(id)).join(", ");
-        productionCounts = Array.isArray(prod.overall_production)
-          ? prod.overall_production.join(", ")
-          : "-";
-        status = "Work";
+      if (!allNone) {
+        // ✅ Create line-by-line content
+        const partsArray = prod.DieId.map((id) => getDieName(id));
+        const countsArray = Array.isArray(prod.overall_production)
+          ? prod.overall_production.map((p) => String(p))
+          : [];
+
+        // join with new line and split to fit cell
+        partNames = doc.splitTextToSize(partsArray.join("\n"), 80);
+        productionCounts = doc.splitTextToSize(countsArray.join("\n"), 30);
       }
     }
 
-    return [formattedDate, partNames, productionCounts, status];
+    const mainRow = [formattedDate, partNames, productionCounts];
+
+    // Sunday / Leave row below
+    let noteRow = null;
+    if (isSunday) {
+      noteRow = ["", "(Sunday)", ""];
+    } else if (isLeave) {
+      noteRow = ["", "(Leave)", ""];
+    }
+
+    return noteRow ? [mainRow, noteRow] : [mainRow];
   });
 
-  const headers = [["Date", "Part Names", "Production", "Status"]];
+  const headers = [["Date", "Part Names", "Production"]];
 
-  // Generate table
   autoTable(doc, {
     head: headers,
     body: rows,
     startY: 20,
-    styles: { fontSize: 8, cellPadding: 2 }, // smaller font and padding
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+      valign: "top",
+    },
+    columnStyles: {
+      0: { cellWidth: 30 },  // Date
+      1: { cellWidth: 100 }, // Part Names — gives more space for multiline
+      2: { cellWidth: 50 },  // Production
+    },
     headStyles: { fillColor: [22, 160, 133] },
     theme: "grid",
-    pageBreak: "avoid", // try to keep all rows in one page
+    pageBreak: "auto",
+    didParseCell: (data) => {
+      // Style Sunday/Leave rows
+      if (data.row.raw[1]?.includes?.("(Sunday)") || data.row.raw[1]?.includes?.("(Leave)")) {
+        data.cell.styles.fontStyle = "italic";
+        data.cell.styles.textColor = [100, 100, 100];
+      }
+    },
   });
 
-  // Add summary below table
+  // 📊 Summary Section
   const finalY = doc.lastAutoTable?.finalY || 20;
   doc.setFontSize(10);
   doc.text("📊 Summary", 14, finalY + 8);
   doc.text(`• Total Overtime: ${totalOvertime}`, 14, finalY + 16);
-  doc.text(`• Total Monthly Pay: ₹${totalMonthyPay}`, 14, finalY + 24);
-  doc.text(`• Final Pay (+₹13,000): ₹${finalPay}`, 14, finalY + 32);
+  doc.text(`• Total Overtime Pay: ${totalMonthyPay}`, 14, finalY + 24);
+  doc.text(`• Final Pay (+13,000): ${finalPay}`, 14, finalY + 32);
 
   doc.save(`Daily_Production_${monthName}_${yearNum}.pdf`);
 };
+
 // 🔹 Fetch productions
   const fetchProductions = async () => {
     try {
@@ -457,7 +484,7 @@ const handleSendWhatsApp = () => {
             Total Overtime: <b>{totalOvertime}</b>
           </p>
           <p>
-            Total Monthly Pay: <b>{totalMonthyPay}</b>
+            Total overtime Pay: <b>{totalMonthyPay}</b>
           </p>
           <p>
             Final Pay (+13,000): <b>{finalPay}</b>
