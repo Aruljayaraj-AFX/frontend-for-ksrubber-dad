@@ -25,57 +25,51 @@ export default function DailyProductionTable() {
 
 const handleSendWhatsApp = () => {
   const doc = new jsPDF("p", "mm", "a4"); // portrait, mm, A4
+  // If you're in a module/bundler environment make sure jspdf-autotable is loaded:
+  // import 'jspdf-autotable'; // or ensure it's included in your bundle
 
-  const monthName = new Date(yearNum, monthNum).toLocaleString("default", {
-    month: "long",
-  });
+  const monthName = new Date(yearNum, monthNum).toLocaleString("default", { month: "long" });
   const title = `Daily Production - ${monthName} ${yearNum}`;
   doc.setFontSize(14);
   doc.text(title, 14, 15);
 
-  // Prepare table rows without status column
-  const rows = displayedProductions.flatMap((prod) => {
+  // Build rows -> each cell will be a multi-line array/string
+  const rows = displayedProductions.map((prod) => {
     const formattedDate = formatDate(prod.date);
-    const day = new Date(prod.date).getDay(); // 0 = Sunday
-    const isSunday = day === 0;
+    const isSunday = new Date(prod.date).getDay() === 0;
     const isLeave = leaveDates.includes(prod.date);
 
-    let partNames = "-";
-    let productionCounts = "-";
-
-    if (!prod.isMissing) {
-      const allNone =
-        Array.isArray(prod.DieId) &&
-        prod.DieId.every((id) => {
-          const die = dies.find((d) => d.DieId === id);
-          return !die || !die.DieName || die.DieName.trim().toLowerCase() === "none";
-        });
-
-      if (!allNone) {
-        // ✅ Create line-by-line content
-        const partsArray = prod.DieId.map((id) => getDieName(id));
-        const countsArray = Array.isArray(prod.overall_production)
-          ? prod.overall_production.map((p) => String(p))
-          : [];
-
-        // join with new line and split to fit cell
-        partNames = doc.splitTextToSize(partsArray.join("\n"), 80);
-        productionCounts = doc.splitTextToSize(countsArray.join("\n"), 30);
-      }
+    // --- build parts array (filter out "none" / empty) ---
+    let partsArray = [];
+    if (!prod.isMissing && Array.isArray(prod.DieId)) {
+      partsArray = prod.DieId
+        .map((id) => (getDieName(id) || "").toString().trim())
+        .filter((n) => n && n.toLowerCase() !== "none");
     }
+    if (partsArray.length === 0) partsArray = ["-"];
 
-    const mainRow = [formattedDate, partNames, productionCounts];
-
-    // Sunday / Leave row below
-    let noteRow = null;
-    if (isSunday) {
-      noteRow = ["", "(Sunday)", ""];
-    } else if (isLeave) {
-      noteRow = ["", "(Leave)", ""];
+    // --- build production counts array ---
+    let countsArray = [];
+    if (!prod.isMissing && Array.isArray(prod.overall_production)) {
+      countsArray = prod.overall_production.map((p) => String(p).trim()).filter((v) => v !== "");
     }
+    if (countsArray.length === 0) countsArray = ["-"];
 
-    return noteRow ? [mainRow, noteRow] : [mainRow];
+    // Append note inside the same Part Names cell (not a new row)
+    if (isSunday) partsArray.push("(Sunday)");
+    else if (isLeave) partsArray.push("(Leave)");
+
+    // Use splitTextToSize to ensure long lines wrap correctly inside cell width
+    // Make these widths roughly match the columnStyles below (in mm)
+    const partCell = doc.splitTextToSize(partsArray.join("\n"), 95);
+    const countCell = doc.splitTextToSize(countsArray.join("\n"), 45);
+
+    return [formattedDate, partCell, countCell];
   });
+
+  // DEBUG: quickly inspect first few rows in the console to ensure structure is correct
+  // (Remove or comment out this line in production)
+  console.log("PDF rows preview:", rows.slice(0, 6));
 
   const headers = [["Date", "Part Names", "Production"]];
 
@@ -87,25 +81,29 @@ const handleSendWhatsApp = () => {
       fontSize: 8,
       cellPadding: 2,
       valign: "top",
+      overflow: "linebreak" // important to break on newlines
     },
     columnStyles: {
-      0: { cellWidth: 30 },  // Date
-      1: { cellWidth: 100 }, // Part Names — gives more space for multiline
-      2: { cellWidth: 50 },  // Production
+      0: { cellWidth: 30 },   // Date
+      1: { cellWidth: 110 },  // Part Names (wider)
+      2: { cellWidth: 50 },   // Production
     },
     headStyles: { fillColor: [22, 160, 133] },
     theme: "grid",
     pageBreak: "auto",
     didParseCell: (data) => {
-      // Style Sunday/Leave rows
-      if (data.row.raw[1]?.includes?.("(Sunday)") || data.row.raw[1]?.includes?.("(Leave)")) {
-        data.cell.styles.fontStyle = "italic";
-        data.cell.styles.textColor = [100, 100, 100];
+      // data.cell.text may be an array — join to inspect contents
+      if (data.column && data.column.index === 1) {
+        const textContent = Array.isArray(data.cell.text) ? data.cell.text.join(" ") : String(data.cell.text || "");
+        if (textContent.includes("(Sunday)") || textContent.includes("(Leave)")) {
+          data.cell.styles.fontStyle = "italic";
+          data.cell.styles.textColor = [100, 100, 100];
+        }
       }
     },
   });
 
-  // 📊 Summary Section
+  // Summary
   const finalY = doc.lastAutoTable?.finalY || 20;
   doc.setFontSize(10);
   doc.text("📊 Summary", 14, finalY + 8);
