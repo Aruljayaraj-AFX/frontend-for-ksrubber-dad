@@ -94,8 +94,12 @@ export default function MonthlySummary() {
           <h4>Total Monthly Pay</h4>
           <p>{totalMonthlyPay}</p>
         </div>
+        <div className="summary-item">
+          <h4>salary Pay</h4>
+          <p>13000</p>
+        </div>
         <div className="summary-item highlight">
-          <h4>Final Pay (+13,000)</h4>
+          <h4>Final Pay</h4>
           <p>{finalPay}</p>
         </div>
       </div>
