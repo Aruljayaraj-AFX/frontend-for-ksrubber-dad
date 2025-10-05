@@ -487,7 +487,10 @@ const handleSendWhatsApp = () => {
             Total overtime Pay: <b>{totalMonthyPay}</b>
           </p>
           <p>
-            Final Pay (+13,000): <b>{finalPay}</b>
+            salary : <b>13000</b>
+          </p>
+          <p>
+            Final Pay: <b>{finalPay}</b>
           </p>
         </div>
         {/* 🔹 Floating download button */}
