@@ -28,6 +28,8 @@ export default function Production({ prefillDate }) {
   const [incomeFallback, setIncomeFallback] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
   const [submitMessage, setSubmitMessage] = useState(null);
+  const [tea,settea] = useState(0);
+  const [water,setwater] = useState(0);
 
   // Update selectedDate if prefillDate comes from navigation
   useEffect(() => {
@@ -194,7 +196,9 @@ const payload = {
   DieIds: selectedDies,
   ProductionCounts: selectedDies.map((id) => Number(productionCounts[id] || 0)),
   production_date: selectedDate,
-  sub_flag: isHoliday ? 0 : 1
+  sub_flag: isHoliday ? 0 : 1,
+  tea : tea,
+  water: water
 };
   try {
     const res = await fetch(
@@ -303,8 +307,30 @@ const payload = {
                     }
                   />
                 </div>
+                
               );
             })}
+            <div>
+              <div className="production-input">
+                <label>tea</label>
+                <input
+                  type="number"
+                  placeholder="enter tea rupees"
+                  value={tea}
+                  onChange={(e) => settea(e.target.value)}
+                  />
+              </div>
+              
+              <div className="production-input">
+                <label>water</label>
+                <input
+                  type="number"
+                  placeholder="enter water rupees"
+                  value={water}
+                  onChange={(e)=>setwater(e.target.value)}
+                  />
+              </div>
+            </div>
 
             <button
               className="submit-btn"
