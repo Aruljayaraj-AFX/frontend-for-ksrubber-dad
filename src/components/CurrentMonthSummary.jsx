@@ -8,11 +8,15 @@ export default function MonthlySummary() {
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   ); // default current month YYYY-MM
+  const [teaInput, setTeaInput] = useState(0);
+  const [waterInput, setWaterInput] = useState(0);
+  const [updating, setUpdating] = useState(false);
 
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const prodRes = await fetch(
           "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
         );
@@ -38,6 +42,9 @@ export default function MonthlySummary() {
           total_water: incomeJson.total_water || 0,
         });
 
+        setTeaInput(incomeJson.total_tea || 0);
+        setWaterInput(incomeJson.total_water || 0);
+
       } catch (err) {
         console.error(err);
         setError("Error fetching data");
@@ -49,10 +56,36 @@ export default function MonthlySummary() {
     fetchData();
   }, []);
 
+  // Update current month tea/water
+  const handleUpdateIncome = async () => {
+    try {
+      setUpdating(true);
+      const res = await fetch(
+        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/monthly-income/current",
+        { method: "PUT" } // No body needed if backend increments
+      );
+
+      if (!res.ok) throw new Error("Failed to update current month income");
+
+      const data = await res.json();
+      setIncomeData({
+        total_income: incomeData.total_income,
+        total_tea: data.data.tea,
+        total_water: data.data.water
+      });
+
+    } catch (err) {
+      console.error(err);
+      setError("Error updating income");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Month navigation
   const handlePrevMonth = () => {
     const [year, month] = selectedMonth.split("-").map(Number);
-    const prev = new Date(year, month - 2); // JS months are 0-indexed
+    const prev = new Date(year, month - 2);
     setSelectedMonth(prev.toISOString().slice(0, 7));
   };
 
@@ -76,8 +109,6 @@ export default function MonthlySummary() {
     (sum, prod) => sum + (parseFloat(prod.monthy_pay) || 0),
     0
   );
-
-  const finalPay = totalMonthlyPay + 13000;
 
   if (loading) return <p className="loading-msg">Loading summary...</p>;
   if (error) return <p className="error-msg">{error}</p>;
@@ -108,25 +139,36 @@ export default function MonthlySummary() {
           <h4>Total Monthly Pay</h4>
           <p>{totalMonthlyPay}</p>
         </div>
-        <div className="summary-item">
-          <h4>Salary Pay</h4>
-          <p>13000</p>
-        </div>
-        <div className="summary-item highlight">
-          <h4>Final Pay</h4>
-          <p>{finalPay}</p>
-        </div>
-        <div className="summary-item">
-          <h4>Total Income</h4>
-          <p>{incomeData.total_income}</p>
-        </div>
+
+        {/* Editable Tea & Water */}
         <div className="summary-item">
           <h4>Tea</h4>
-          <p>{incomeData.total_tea}</p>
+          <input 
+            type="number" 
+            value={teaInput} 
+            onChange={(e) => setTeaInput(parseFloat(e.target.value))}
+            disabled={updating}
+          />
         </div>
         <div className="summary-item">
           <h4>Water</h4>
-          <p>{incomeData.total_water}</p>
+          <input 
+            type="number" 
+            value={waterInput} 
+            onChange={(e) => setWaterInput(parseFloat(e.target.value))}
+            disabled={updating}
+          />
+        </div>
+        <div style={{ gridColumn: "span 2", marginTop: "10px" }}>
+          <button onClick={handleUpdateIncome} disabled={updating}>
+            {updating ? "Updating..." : "Update Current Month"}
+          </button>
+        </div>
+
+        {/* Highlight Total Income */}
+        <div className="summary-item highlight">
+          <h4>Total Income</h4>
+          <p>{incomeData.total_income}</p>
         </div>
       </div>
     </div>
