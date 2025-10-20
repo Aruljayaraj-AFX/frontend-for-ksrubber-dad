@@ -17,6 +17,7 @@ export default function MonthlySummary() {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const prodRes = await fetch(
           "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
         );
@@ -62,12 +63,20 @@ export default function MonthlySummary() {
       setUpdating(true);
       const res = await fetch(
         "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/monthly-income/current",
-        { method: "PUT" } // No body needed if backend increments
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tea: teaInput,
+            water: waterInput
+          })
+        }
       );
 
       if (!res.ok) throw new Error("Failed to update current month income");
 
       const data = await res.json();
+
       setIncomeData({
         total_income: incomeData.total_income,
         total_tea: data.data.tea,
