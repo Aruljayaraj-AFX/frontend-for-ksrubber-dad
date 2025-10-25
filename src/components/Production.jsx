@@ -50,7 +50,7 @@ export default function Production({ prefillDate }) {
     const fetchDies = async () => {
       try {
         const response = await fetch(
-          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+          "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get_all_die"
         );
         if (!response.ok) throw new Error("Failed to fetch dies");
         const data = await response.json();
@@ -118,7 +118,7 @@ export default function Production({ prefillDate }) {
 
     try {
       const res = await fetch(
-        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}&sub_flag=${subFlag}`,
+        `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/compute_production/?input_date=${selectedDate}&sub_flag=${subFlag}`,
         {
           method: "POST",
           headers: {
@@ -136,7 +136,7 @@ export default function Production({ prefillDate }) {
         const [year, month] = selectedDate.split("-");
         try {
           const incomeRes = await fetch(
-            `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_month_income/?year=${year}&month=${month}`
+            `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get_month_income/?year=${year}&month=${month}`
           );
           const incomeData = await incomeRes.json();
 
@@ -202,7 +202,7 @@ const payload = {
 };
   try {
     const res = await fetch(
-      "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/calculate_production_hours",
+      "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/calculate_production_hours",
       {
         method: "POST",
         headers: {

@@ -118,7 +118,7 @@ const handleSendWhatsApp = () => {
   const fetchProductions = async () => {
     try {
       const prodRes = await fetch(
-        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"
+        "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/daily-production/"
       );
       if (!prodRes.ok) throw new Error("Failed to fetch daily production");
       const prodData = await prodRes.json();
@@ -134,7 +134,7 @@ const handleSendWhatsApp = () => {
     const fetchData = async () => {
       try {
         const dieRes = await fetch(
-          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+          "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get_all_die"
         );
         if (dieRes.ok) {
           const dieData = await dieRes.json();
@@ -164,7 +164,7 @@ const handleSendWhatsApp = () => {
 
     try {
       const response = await fetch(
-        `https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/delete_production/${sno}`,
+        `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/delete_production/${sno}`,
         { method: "DELETE" }
       );
       const data = await response.json();
@@ -277,7 +277,7 @@ const handleSendWhatsApp = () => {
         };
 
         const response = await fetch(
-          "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/add_daily_production",
+          "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/add_daily_production",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

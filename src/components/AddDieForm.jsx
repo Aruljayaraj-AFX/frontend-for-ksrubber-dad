@@ -22,7 +22,7 @@ export default function AddDieForm() {
   const fetchDies = async () => {
     try {
       const response = await fetch(
-        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/get_all_die"
+        "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get_all_die"
       );
       if (!response.ok) throw new Error("Failed to fetch dies");
       const data = await response.json();
@@ -70,7 +70,7 @@ export default function AddDieForm() {
 
     try {
       const response = await fetch(
-        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/add_die",
+        "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/add_die",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

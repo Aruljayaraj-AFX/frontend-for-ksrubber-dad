@@ -23,8 +23,8 @@ export default function MonthlySummary() {
         setError("");
 
         const [prodRes, incomeRes] = await Promise.all([
-          fetch("https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/daily-production/"),
-          fetch("https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/monthly-income/"),
+          fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/daily-production/"),
+          fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/"),
         ]);
 
         if (!prodRes.ok) throw new Error("Failed to fetch daily production");
@@ -64,7 +64,7 @@ export default function MonthlySummary() {
       setError("");
 
       const res = await fetch(
-        "https://ksrubber-backend.onrender.com/afx/pro_ksrubber/v1/monthly-income/current",
+        "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/current",
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
