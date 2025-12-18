@@ -15,6 +15,58 @@ export default function MonthlySummary() {
   const [teaInput, setTeaInput] = useState(0);
   const [waterInput, setWaterInput] = useState(0);
   const [updating, setUpdating] = useState(false);
+  const [settingIncome, setSettingIncome] = useState(0);
+  const [settingIncomeInput, setSettingIncomeInput] = useState(0);
+  const [updatingSettingIncome, setUpdatingSettingIncome] = useState(false);
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [prodRes, incomeRes, settingRes] = await Promise.all([
+        fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/daily-production/"),
+        fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/"),
+        fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get-setting-income")
+      ]);
+
+      if (!prodRes.ok) throw new Error("Failed to fetch daily production");
+      if (!incomeRes.ok) throw new Error("Failed to fetch monthly income");
+      if (!settingRes.ok) throw new Error("Failed to fetch setting income");
+
+      const prodData = await prodRes.json();
+      const incomeJson = await incomeRes.json();
+      const settingJson = await settingRes.json();
+
+      if (prodData.status === "success") {
+        setProductions(prodData.data);
+      }
+
+      setIncomeData({
+        total_income: incomeJson.total_income || 0,
+        total_tea: incomeJson.total_tea || 0,
+        total_water: incomeJson.total_water || 0,
+      });
+
+      setTeaInput(incomeJson.total_tea || 0);
+      setWaterInput(incomeJson.total_water || 0);
+
+      // 🔥 SETTING INCOME
+      setSettingIncome(settingJson.income || 0);
+      setSettingIncomeInput(settingJson.income || 0);
+
+    } catch (err) {
+      console.error(err);
+      setError("Error fetching data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -118,6 +170,38 @@ export default function MonthlySummary() {
   if (loading) return <p className="loading-msg">⏳ Loading summary...</p>;
   if (error) return <p className="error-msg">{error}</p>;
 
+  const handleUpdateSettingIncome = async () => {
+  try {
+    setUpdatingSettingIncome(true);
+    setError("");
+
+    const res = await fetch(
+      `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/setting-income?income=${settingIncomeInput}`,
+      {
+        method: "PUT",
+      }
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Backend error:", errText);
+      throw new Error("Failed to update setting income");
+    }
+
+    const data = await res.json();
+    setSettingIncome(data.income);
+    setSettingIncomeInput(data.income);
+
+  } catch (err) {
+    console.error(err);
+    setError("Error updating base income.");
+  } finally {
+    setUpdatingSettingIncome(false);
+  }
+};
+
+
+
   return (
     <div className="summary-container">
       <div className="summary-header">
@@ -145,7 +229,26 @@ export default function MonthlySummary() {
           <h4>Total Monthly Pay</h4>
           <p className="value">{totalMonthlyPay.toFixed(2)}</p>
         </div>
-
+        <div className="summary-item">
+          <h4>Base Monthly Income</h4>
+          <input
+            type="number"
+            value={settingIncomeInput}
+            onChange={(e) => setSettingIncomeInput(parseFloat(e.target.value) || 0)}
+            disabled={updatingSettingIncome}
+            aria-label="Base income"
+          />
+        </div>
+        
+        <div className="summary-item">
+          <h4>&nbsp;</h4>
+          <button
+            onClick={handleUpdateSettingIncome}
+            disabled={updatingSettingIncome}
+          >
+            {updatingSettingIncome ? "Updating..." : "Update Base Income"}
+          </button>
+        </div>
         <div className="summary-item">
           <h4>Tea</h4>
           <input

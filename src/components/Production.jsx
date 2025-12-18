@@ -30,6 +30,8 @@ export default function Production({ prefillDate }) {
   const [submitMessage, setSubmitMessage] = useState(null);
   const [tea,settea] = useState(0);
   const [water,setwater] = useState(0);
+  const [dailyIncome, setDailyIncome] = useState(0);
+
 
   // Update selectedDate if prefillDate comes from navigation
   useEffect(() => {
@@ -132,6 +134,9 @@ export default function Production({ prefillDate }) {
 
       if (data.status === "success") {
         setResult(data);
+        const backendDailyIncome = Number(data?.new_daily_pro?.daily_income || 0);
+
+setDailyIncome(backendDailyIncome);
 
         const [year, month] = selectedDate.split("-");
         try {
@@ -144,12 +149,12 @@ export default function Production({ prefillDate }) {
             setMonthIncome(incomeData.data.income);
             setIncomeFallback(false);
           } else {
-            setMonthIncome(13000);
+            setMonthIncome(0);
             setIncomeFallback(true);
           }
         } catch (err) {
           console.error("Income fetch failed:", err);
-          setMonthIncome(13000);
+          setMonthIncome(0);
           setIncomeFallback(true);
         }
 
@@ -247,7 +252,7 @@ const payload = {
 
   const monthlyPay = Number(result?.new_daily_pro?.monthy_pay || 0);
   const monthlyIncomeNum = Number(monthIncome || 0);
-  const netTotal = monthlyPay + monthlyIncomeNum;
+  const netTotal = monthlyPay + monthlyIncomeNum + dailyIncome;
 
   return (
     <div className="container">
@@ -393,7 +398,9 @@ const payload = {
               <strong>Income:</strong> ₹{monthlyIncomeNum}{" "}
               {incomeFallback && <span className="fallback">(fixed)</span>}
             </div>
-
+            <div className="final-summary">
+              <strong>Daily Base Income:</strong> ₹{dailyIncome.toFixed(2)}
+            </div>
             <div className="final-summary net-total">
               <strong>Total Income:</strong>{" "}
               <span className={netTotal >= 0 ? "positive" : "negative"}>
