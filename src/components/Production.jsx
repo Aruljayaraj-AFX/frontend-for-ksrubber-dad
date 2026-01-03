@@ -252,7 +252,7 @@ const payload = {
 
   const monthlyPay = Number(result?.new_daily_pro?.monthy_pay || 0);
   const monthlyIncomeNum = Number(monthIncome || 0);
-  const netTotal = monthlyPay + monthlyIncomeNum + dailyIncome;
+  const netTotal = monthlyPay + monthlyIncomeNum ;
 
   return (
     <div className="container">
@@ -397,9 +397,6 @@ const payload = {
             <div className="final-summary">
               <strong>Income:</strong> ₹{monthlyIncomeNum}{" "}
               {incomeFallback && <span className="fallback">(fixed)</span>}
-            </div>
-            <div className="final-summary">
-              <strong>Daily Base Income:</strong> ₹{dailyIncome.toFixed(2)}
             </div>
             <div className="final-summary net-total">
               <strong>Total Income:</strong>{" "}
