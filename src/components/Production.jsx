@@ -251,7 +251,7 @@ const payload = {
   if (error) return <p className="info-text error">{error}</p>;
 
   const monthlyPay = Number(result?.new_daily_pro?.monthy_pay || 0);
-  const monthlyIncomeNum = Number(monthIncome || 0);
+  const monthlyIncomeNum = Number(result?.new_daily_pro?.fin_pay || 0);
   const netTotal = monthlyPay + monthlyIncomeNum ;
 
   return (
