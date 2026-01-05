@@ -2,106 +2,49 @@ import { useEffect, useState } from "react";
 
 export default function MonthlySummary() {
   const [productions, setProductions] = useState([]);
-  const [incomeData, setIncomeData] = useState({
-    total_income: 0,
-    total_tea: 0,
-    total_water: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
+
   const [teaInput, setTeaInput] = useState(0);
   const [waterInput, setWaterInput] = useState(0);
-  const [updating, setUpdating] = useState(false);
+
   const [settingIncome, setSettingIncome] = useState(0);
   const [settingIncomeInput, setSettingIncomeInput] = useState(0);
-  const [updatingSettingIncome, setUpdatingSettingIncome] = useState(false);
 
-  useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const [editExpenses, setEditExpenses] = useState(false);
+  const [editBaseIncome, setEditBaseIncome] = useState(false);
 
-      const [prodRes, incomeRes, settingRes] = await Promise.all([
-        fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/daily-production/"),
-        fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/"),
-        fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get-setting-income")
-      ]);
+  const [savingExpenses, setSavingExpenses] = useState(false);
+  const [savingBaseIncome, setSavingBaseIncome] = useState(false);
 
-      if (!prodRes.ok) throw new Error("Failed to fetch daily production");
-      if (!incomeRes.ok) throw new Error("Failed to fetch monthly income");
-      if (!settingRes.ok) throw new Error("Failed to fetch setting income");
-
-      const prodData = await prodRes.json();
-      const incomeJson = await incomeRes.json();
-      const settingJson = await settingRes.json();
-
-      if (prodData.status === "success") {
-        setProductions(prodData.data);
-      }
-
-      setIncomeData({
-        total_income: incomeJson.total_income || 0,
-        total_tea: incomeJson.total_tea || 0,
-        total_water: incomeJson.total_water || 0,
-      });
-
-      setTeaInput(incomeJson.total_tea || 0);
-      setWaterInput(incomeJson.total_water || 0);
-
-      // 🔥 SETTING INCOME
-      setSettingIncome(settingJson.income || 0);
-      setSettingIncomeInput(settingJson.income || 0);
-
-    } catch (err) {
-      console.error(err);
-      setError("Error fetching data. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, []);
-
-
+  /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError("");
 
-        const [prodRes, incomeRes] = await Promise.all([
+        const [prodRes, incomeRes, settingRes] = await Promise.all([
           fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/daily-production/"),
           fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/"),
+          fetch("https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get-setting-income"),
         ]);
 
-        if (!prodRes.ok) throw new Error("Failed to fetch daily production");
-        if (!incomeRes.ok) throw new Error("Failed to fetch monthly income");
-
         const prodData = await prodRes.json();
-        const incomeJson = await incomeRes.json();
+        const incomeData = await incomeRes.json();
+        const settingData = await settingRes.json();
 
-        if (prodData.status === "success") {
-          setProductions(prodData.data);
-        } else {
-          throw new Error("Daily production API returned error");
-        }
+        setProductions(prodData.data || []);
+        setTeaInput(incomeData.total_tea || 0);
+        setWaterInput(incomeData.total_water || 0);
+        setSettingIncome(settingData.income || 0);
+        setSettingIncomeInput(settingData.income || 0);
 
-        setIncomeData({
-          total_income: incomeJson.total_income || 0,
-          total_tea: incomeJson.total_tea || 0,
-          total_water: incomeJson.total_water || 0,
-        });
-
-        setTeaInput(incomeJson.total_tea || 0);
-        setWaterInput(incomeJson.total_water || 0);
       } catch (err) {
-        console.error(err);
-        setError("Error fetching data. Please try again later.");
+        setError("Failed to load data");
       } finally {
         setLoading(false);
       }
@@ -110,12 +53,31 @@ export default function MonthlySummary() {
     fetchData();
   }, []);
 
-  const handleUpdateIncome = async () => {
-    try {
-      setUpdating(true);
-      setError("");
+  /* ---------------- MONTH FILTER ---------------- */
+  const filteredProductions = productions.filter(
+    (p) => p.date.slice(0, 7) === selectedMonth
+  );
 
-      const res = await fetch(
+  const totalOvertime = filteredProductions.reduce(
+    (sum, p) =>
+      sum + p.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0),
+    0
+  );
+
+  const totalMonthlyPay = filteredProductions.reduce(
+    (sum, p) => sum + (parseFloat(p.monthy_pay) || 0),
+    0
+  );
+
+  const totalIncome =
+    settingIncome + totalMonthlyPay - teaInput - waterInput;
+
+  /* ---------------- SAVE HANDLERS ---------------- */
+  const saveExpenses = async () => {
+    try {
+      setSavingExpenses(true);
+
+      await fetch(
         "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/current",
         {
           method: "PUT",
@@ -124,163 +86,124 @@ export default function MonthlySummary() {
         }
       );
 
-      if (!res.ok) throw new Error("Failed to update current month income");
-      const data = await res.json();
-
-      setIncomeData((prev) => ({
-        ...prev,
-        total_tea: data.data.tea,
-        total_water: data.data.water,
-      }));
-    } catch (err) {
-      console.error(err);
-      setError("Error updating income. Please try again.");
+      setEditExpenses(false);
+    } catch {
+      setError("Failed to update expenses");
     } finally {
-      setUpdating(false);
+      setSavingExpenses(false);
     }
   };
 
-  const handlePrevMonth = () => {
-    const [year, month] = selectedMonth.split("-").map(Number);
-    const prev = new Date(year, month - 2);
-    setSelectedMonth(prev.toISOString().slice(0, 7));
-  };
+  const saveBaseIncome = async () => {
+    try {
+      setSavingBaseIncome(true);
 
-  const handleNextMonth = () => {
-    const [year, month] = selectedMonth.split("-").map(Number);
-    const next = new Date(year, month);
-    setSelectedMonth(next.toISOString().slice(0, 7));
-  };
+      const res = await fetch(
+        `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/setting-income?income=${settingIncomeInput}`,
+        { method: "PUT" }
+      );
 
-  const filteredProductions = productions.filter(
-    (prod) => prod.date.slice(0, 7) === selectedMonth
-  );
+      const data = await res.json();
+      setSettingIncome(data.income);
+      setEditBaseIncome(false);
 
-  const totalOvertime = filteredProductions.reduce(
-    (sum, prod) =>
-      sum + prod.overtime.reduce((a, b) => a + (parseFloat(b) || 0), 0),
-    0
-  );
-
-  const totalMonthlyPay = filteredProductions.reduce(
-    (sum, prod) => sum + (parseFloat(prod.monthy_pay) || 0),
-    0
-  );
-
-  if (loading) return <p className="loading-msg">⏳ Loading summary...</p>;
-  if (error) return <p className="error-msg">{error}</p>;
-
-  const handleUpdateSettingIncome = async () => {
-  try {
-    setUpdatingSettingIncome(true);
-    setError("");
-
-    const res = await fetch(
-      `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/setting-income?income=${settingIncomeInput}`,
-      {
-        method: "PUT",
-      }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Backend error:", errText);
-      throw new Error("Failed to update setting income");
+    } catch {
+      setError("Failed to update base income");
+    } finally {
+      setSavingBaseIncome(false);
     }
+  };
 
-    const data = await res.json();
-    setSettingIncome(data.income);
-    setSettingIncomeInput(data.income);
+  if (loading) return <p>⏳ Loading...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
 
-  } catch (err) {
-    console.error(err);
-    setError("Error updating base income.");
-  } finally {
-    setUpdatingSettingIncome(false);
-  }
-};
-
-
-
+  /* ---------------- UI ---------------- */
   return (
     <div className="summary-container">
-      <div className="summary-header">
-        <h2>Hello! Arputharaj</h2>
+      <h2>Hello! Arputharaj</h2>
 
-        <div className="month-nav">
-          <button onClick={handlePrevMonth} aria-label="Previous month">◀</button>
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            aria-label="Select month"
-          />
-          <button onClick={handleNextMonth} aria-label="Next month">▶</button>
-        </div>
-      </div>
+      <input
+        type="month"
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+      />
 
       <div className="summary-grid">
+
         <div className="summary-item">
           <h4>Total Overtime</h4>
-          <p className="value">{totalOvertime.toFixed(2)}</p>
+          <p>{totalOvertime.toFixed(2)}</p>
         </div>
 
         <div className="summary-item">
           <h4>Total Monthly Pay</h4>
-          <p className="value">{totalMonthlyPay.toFixed(2)}</p>
-        </div>
-        <div className="summary-item">
-          <h4>Base Monthly Income</h4>
-          <input
-            type="number"
-            value={settingIncomeInput}
-            onChange={(e) => setSettingIncomeInput(parseFloat(e.target.value) || 0)}
-            disabled={updatingSettingIncome}
-            aria-label="Base income"
-          />
-        </div>
-        
-        <div className="summary-item">
-          <h4>&nbsp;</h4>
-          <button
-            onClick={handleUpdateSettingIncome}
-            disabled={updatingSettingIncome}
-          >
-            {updatingSettingIncome ? "Updating..." : "Update Base Income"}
-          </button>
-        </div>
-        <div className="summary-item">
-          <h4>Tea</h4>
-          <input
-            type="number"
-            value={teaInput}
-            onChange={(e) => setTeaInput(parseFloat(e.target.value) || 0)}
-            disabled={updating}
-            aria-label="Tea expense"
-          />
+          <p>{totalMonthlyPay.toFixed(2)}</p>
         </div>
 
+        {/* BASE INCOME */}
         <div className="summary-item">
-          <h4>Water</h4>
-          <input
-            type="number"
-            value={waterInput}
-            onChange={(e) => setWaterInput(parseFloat(e.target.value) || 0)}
-            disabled={updating}
-            aria-label="Water expense"
-          />
+          <h4>Base Income</h4>
+
+          {!editBaseIncome ? (
+            <>
+              <p>₹ {settingIncome.toFixed(2)}</p>
+              <button onClick={() => setEditBaseIncome(true)}>Edit</button>
+            </>
+          ) : (
+            <>
+              <input
+                type="number"
+                value={settingIncomeInput}
+                onChange={(e) =>
+                  setSettingIncomeInput(Number(e.target.value) || 0)
+                }
+              />
+              <button onClick={saveBaseIncome} disabled={savingBaseIncome}>
+                {savingBaseIncome ? "Saving..." : "Save"}
+              </button>
+              <button onClick={() => setEditBaseIncome(false)}>Cancel</button>
+            </>
+          )}
         </div>
 
-        <div className="summary-item update-btn-container">
-          <button onClick={handleUpdateIncome} disabled={updating}>
-            {updating ? "Updating..." : "Update Current Month"}
-          </button>
+        {/* EXPENSES */}
+        <div className="summary-item">
+          <h4>Expenses</h4>
+
+          {!editExpenses ? (
+            <>
+              <p>Tea: ₹ {teaInput}</p>
+              <p>Water: ₹ {waterInput}</p>
+              <button onClick={() => setEditExpenses(true)}>Edit</button>
+            </>
+          ) : (
+            <>
+              <input
+                type="number"
+                placeholder="Tea"
+                value={teaInput}
+                onChange={(e) => setTeaInput(Number(e.target.value) || 0)}
+              />
+              <input
+                type="number"
+                placeholder="Water"
+                value={waterInput}
+                onChange={(e) => setWaterInput(Number(e.target.value) || 0)}
+              />
+              <button onClick={saveExpenses} disabled={savingExpenses}>
+                {savingExpenses ? "Saving..." : "Save"}
+              </button>
+              <button onClick={() => setEditExpenses(false)}>Cancel</button>
+            </>
+          )}
         </div>
 
+        {/* TOTAL */}
         <div className="summary-item highlight">
           <h4>Total Income</h4>
-          <p className="value large">{incomeData.total_income.toFixed(2)}</p>
+          <p>₹ {totalIncome.toFixed(2)}</p>
         </div>
+
       </div>
 
       <style>{`
