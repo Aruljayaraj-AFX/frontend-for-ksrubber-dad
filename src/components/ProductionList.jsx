@@ -18,103 +18,95 @@ export default function DailyProductionTable() {
   const [selectedYear, setSelectedYear] = useState("");
   const [showDownloadPopup, setShowDownloadPopup] = useState(false);
 
+  // New: settings / month income states
+  const [baseSalary, setBaseSalary] = useState(13000); // default fallback
+  const [monthIncome, setMonthIncome] = useState(0); // income returned from month endpoint
 
   const navigate = useNavigate();
   const tableRef = useRef(); 
   const summaryRef = useRef(null);
 
-const handleSendWhatsApp = () => {
-  const doc = new jsPDF("p", "mm", "a4"); // portrait, mm, A4
-  // If you're in a module/bundler environment make sure jspdf-autotable is loaded:
-  // import 'jspdf-autotable'; // or ensure it's included in your bundle
+  // ---------- PDF / WhatsApp export (unchanged) ----------
+  const handleSendWhatsApp = () => {
+    const doc = new jsPDF("p", "mm", "a4"); // portrait, mm, A4
+    const monthName = new Date(yearNum, monthNum).toLocaleString("default", { month: "long" });
+    const title = `Daily Production - ${monthName} ${yearNum}`;
+    doc.setFontSize(14);
+    doc.text(title, 14, 15);
 
-  const monthName = new Date(yearNum, monthNum).toLocaleString("default", { month: "long" });
-  const title = `Daily Production - ${monthName} ${yearNum}`;
-  doc.setFontSize(14);
-  doc.text(title, 14, 15);
+    // Build rows -> each cell will be a multi-line array/string
+    const rows = displayedProductions.map((prod) => {
+      const formattedDate = formatDate(prod.date);
+      const isSunday = new Date(prod.date).getDay() === 0;
+      const isLeave = leaveDates.includes(prod.date);
 
-  // Build rows -> each cell will be a multi-line array/string
-  const rows = displayedProductions.map((prod) => {
-    const formattedDate = formatDate(prod.date);
-    const isSunday = new Date(prod.date).getDay() === 0;
-    const isLeave = leaveDates.includes(prod.date);
-
-    // --- build parts array (filter out "none" / empty) ---
-    let partsArray = [];
-    if (!prod.isMissing && Array.isArray(prod.DieId)) {
-      partsArray = prod.DieId
-        .map((id) => (getDieName(id) || "").toString().trim())
-        .filter((n) => n && n.toLowerCase() !== "none");
-    }
-    if (partsArray.length === 0) partsArray = ["-"];
-
-    // --- build production counts array ---
-    let countsArray = [];
-    if (!prod.isMissing && Array.isArray(prod.overall_production)) {
-      countsArray = prod.overall_production.map((p) => String(p).trim()).filter((v) => v !== "");
-    }
-    if (countsArray.length === 0) countsArray = ["-"];
-
-    // Append note inside the same Part Names cell (not a new row)
-    if (isSunday) partsArray.push("(Sunday)");
-    else if (isLeave) partsArray.push("(Leave)");
-
-    // Use splitTextToSize to ensure long lines wrap correctly inside cell width
-    // Make these widths roughly match the columnStyles below (in mm)
-    const partCell = doc.splitTextToSize(partsArray.join("\n"), 95);
-    const countCell = doc.splitTextToSize(countsArray.join("\n"), 45);
-
-    return [formattedDate, partCell, countCell];
-  });
-
-  // DEBUG: quickly inspect first few rows in the console to ensure structure is correct
-  // (Remove or comment out this line in production)
-  console.log("PDF rows preview:", rows.slice(0, 6));
-
-  const headers = [["Date", "Part Names", "Production"]];
-
-  autoTable(doc, {
-    head: headers,
-    body: rows,
-    startY: 20,
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      valign: "top",
-      overflow: "linebreak" // important to break on newlines
-    },
-    columnStyles: {
-      0: { cellWidth: 30 },   // Date
-      1: { cellWidth: 110 },  // Part Names (wider)
-      2: { cellWidth: 50 },   // Production
-    },
-    headStyles: { fillColor: [22, 160, 133] },
-    theme: "grid",
-    pageBreak: "auto",
-    didParseCell: (data) => {
-      // data.cell.text may be an array — join to inspect contents
-      if (data.column && data.column.index === 1) {
-        const textContent = Array.isArray(data.cell.text) ? data.cell.text.join(" ") : String(data.cell.text || "");
-        if (textContent.includes("(Sunday)") || textContent.includes("(Leave)")) {
-          data.cell.styles.fontStyle = "italic";
-          data.cell.styles.textColor = [100, 100, 100];
-        }
+      let partsArray = [];
+      if (!prod.isMissing && Array.isArray(prod.DieId)) {
+        partsArray = prod.DieId
+          .map((id) => (getDieName(id) || "").toString().trim())
+          .filter((n) => n && n.toLowerCase() !== "none");
       }
-    },
-  });
+      if (partsArray.length === 0) partsArray = ["-"];
 
-  // Summary
-  const finalY = doc.lastAutoTable?.finalY || 20;
-  doc.setFontSize(10);
-  doc.text("📊 Summary", 14, finalY + 8);
-  doc.text(`• Total Overtime: ${totalOvertime}`, 14, finalY + 16);
-  doc.text(`• Total Overtime Pay: ${totalMonthyPay}`, 14, finalY + 24);
-  doc.text(`• Final Pay (+13,000): ${finalPay}`, 14, finalY + 32);
+      let countsArray = [];
+      if (!prod.isMissing && Array.isArray(prod.overall_production)) {
+        countsArray = prod.overall_production.map((p) => String(p).trim()).filter((v) => v !== "");
+      }
+      if (countsArray.length === 0) countsArray = ["-"];
 
-  doc.save(`Daily_Production_${monthName}_${yearNum}.pdf`);
-};
+      if (isSunday) partsArray.push("(Sunday)");
+      else if (isLeave) partsArray.push("(Leave)");
 
-// 🔹 Fetch productions
+      const partCell = doc.splitTextToSize(partsArray.join("\n"), 95);
+      const countCell = doc.splitTextToSize(countsArray.join("\n"), 45);
+
+      return [formattedDate, partCell, countCell];
+    });
+
+    console.log("PDF rows preview:", rows.slice(0, 6));
+
+    const headers = [["Date", "Part Names", "Production"]];
+
+    autoTable(doc, {
+      head: headers,
+      body: rows,
+      startY: 20,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        valign: "top",
+        overflow: "linebreak"
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 110 },
+        2: { cellWidth: 50 },
+      },
+      headStyles: { fillColor: [22, 160, 133] },
+      theme: "grid",
+      pageBreak: "auto",
+      didParseCell: (data) => {
+        if (data.column && data.column.index === 1) {
+          const textContent = Array.isArray(data.cell.text) ? data.cell.text.join(" ") : String(data.cell.text || "");
+          if (textContent.includes("(Sunday)") || textContent.includes("(Leave)")) {
+            data.cell.styles.fontStyle = "italic";
+            data.cell.styles.textColor = [100, 100, 100];
+          }
+        }
+      },
+    });
+
+    const finalY = doc.lastAutoTable?.finalY || 20;
+    doc.setFontSize(10);
+    doc.text("📊 Summary", 14, finalY + 8);
+    doc.text(`• Total Overtime: ${totalOvertime}`, 14, finalY + 16);
+    doc.text(`• Total Overtime Pay: ${totalMonthyPay}`, 14, finalY + 24);
+    doc.text(`• Final Pay (+13,000): ${finalPay}`, 14, finalY + 32);
+
+    doc.save(`Daily_Production_${monthName}_${yearNum}.pdf`);
+  };
+
+  // 🔹 Fetch productions
   const fetchProductions = async () => {
     try {
       const prodRes = await fetch(
@@ -210,16 +202,63 @@ const handleSendWhatsApp = () => {
     monthNum = currentMonth;
   }
 
-  let allDates = getDaysInMonth(yearNum, monthNum);
-  if (yearNum === currentYear && monthNum === currentMonth) {
-    allDates = allDates.filter((d) => new Date(d) <= today);
-  }
+  // New: fetch base salary and month income whenever year/month selection changes
+  useEffect(() => {
+    const fetchSettingsAndMonth = async () => {
+      try {
+        // 1) fetch base salary setting
+        const settingRes = await fetch(
+          "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get-setting-income"
+        );
+        if (settingRes.ok) {
+          const settingData = await settingRes.json();
+          // settingData appears to be an object like { id:1, income:18000, ... }
+          if (settingData && typeof settingData.income === "number") {
+            setBaseSalary(settingData.income);
+          } else if (settingData && settingData.data && typeof settingData.data.income === "number") {
+            // try data wrapper fallback
+            setBaseSalary(settingData.data.income);
+          }
+        }
+
+        // 2) fetch month income for selected year/month
+        // month for API is 1-based
+        const monthForApi = monthNum + 1;
+        const monthUrl = `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/get_month_income/?year=${yearNum}&month=${monthForApi}`;
+        const monthRes = await fetch(monthUrl);
+        if (monthRes.ok) {
+          const monthData = await monthRes.json();
+          // Expecting { status: "success", data: { month: "...", income: 21219.35, ... } }
+          if (monthData && monthData.status === "success" && monthData.data && typeof monthData.data.income === "number") {
+            setMonthIncome(monthData.data.income);
+          } else if (monthData && typeof monthData.income === "number") {
+            // fallback if response shape differs
+            setMonthIncome(monthData.income);
+          } else {
+            setMonthIncome(0);
+          }
+        } else {
+          setMonthIncome(0);
+        }
+      } catch (err) {
+        console.error("Error fetching settings/month income", err);
+      }
+    };
+
+    fetchSettingsAndMonth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth, selectedYear, productions]); // refetch if period selection or productions change
 
   // 🔹 Map productions by date
   const productionMap = {};
   productions.forEach((p) => (productionMap[p.date] = p));
 
   // 🔹 Merge: ensure all dates show
+  let allDates = getDaysInMonth(yearNum, monthNum);
+  if (yearNum === currentYear && monthNum === currentMonth) {
+    allDates = allDates.filter((d) => new Date(d) <= today);
+  }
+
   const displayedProductions = allDates
     .map((date) =>
       productionMap[date]
@@ -235,7 +274,7 @@ const handleSendWhatsApp = () => {
       return true;
     });
 
-  // 🔹 Summary calculation
+  // 🔹 Summary calculation (existing logic)
   const totalOvertime = displayedProductions.reduce((sum, prod) => {
     if (prod.isMissing || !Array.isArray(prod.overtime)) return sum;
     return (
@@ -243,12 +282,24 @@ const handleSendWhatsApp = () => {
     );
   }, 0);
 
+  // This name is kept from your original code: it appears to represent money (overtime/pay items)
   const totalMonthyPay = displayedProductions.reduce((sum, prod) => {
     if (prod.isMissing || !prod.monthy_pay) return sum;
     return sum + (parseFloat(prod.monthy_pay) || 0);
   }, 0);
 
-  const finalPay = totalMonthyPay + 13000;
+  // Derived values based on your instructions:
+  const totalOvertimePay = totalMonthyPay; // treating this as the overtime pay total
+  const withoutLeaveSalary = baseSalary + totalOvertimePay; // "total overtime pay + salary"
+  // Interpreting: "get that income and without leave salary and income value sub to store as this month salary"
+  // => thisMonthSalary = withoutLeaveSalary - monthIncome
+  // Also your later sentence suggests: (salary - ( this month salary value  ) +overtime) => income
+  // I'll provide one "adjusted" variant that follows salary - monthIncome + overtimePay
+  const thisMonthSalary_subtract = withoutLeaveSalary - (monthIncome || 0);
+  const thisMonthSalary_alt = baseSalary - (monthIncome || 0) + totalOvertimePay;
+
+  // Keep finalPay for compatibility with PDF code (you can choose which you prefer)
+  const finalPay = thisMonthSalary_alt;
 
   // 🔹 Date formatting
   const formatDate = (dateStr) => {
@@ -356,6 +407,7 @@ const handleSendWhatsApp = () => {
             </thead>
             <tbody>
               {displayedProductions.map((prod) => {
+                const isSunday = new Date(prod.date).getDay() === 0;
                 const isHoliday =
                   !prod.isMissing &&
                   Array.isArray(prod.overtime) &&
@@ -420,13 +472,11 @@ const handleSendWhatsApp = () => {
                   >
                     <td>
                       {formatDate(prod.date)}
-                      {(new Date(prod.date).getDay() === 0 || isHoliday) && (
+                      {(isSunday || isHoliday) && (
                         <div
-                          className={`sunday-note ${
-                            isHoliday ? "holiday-note" : ""
-                          }`}
+                          className={`sunday-note ${isHoliday && !isSunday ? "holiday-note" : ""}`}
                         >
-                          {isHoliday ? "Holiday" : "Sunday"}
+                          {isSunday ? "Sunday" : "Holiday"}
                         </div>
                       )}
                     </td>
@@ -482,16 +532,22 @@ const handleSendWhatsApp = () => {
               `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`}
           </h3>
           <p>
-            Total Overtime: <b>{totalOvertime}</b>
+            Total Overtime (hours): <b>{totalOvertime}</b>
           </p>
           <p>
-            Total overtime Pay: <b>{totalMonthyPay}</b>
+            Total Overtime Pay: <b>{totalOvertimePay.toFixed(2)}</b>
           </p>
           <p>
-            salary : <b>13000</b>
+            Base Salary (from settings): <b>{baseSalary.toFixed(2)}</b>
           </p>
           <p>
-            Final Pay: <b>{finalPay}</b>
+            Without Leave Salary (salary + overtime pay): <b>{withoutLeaveSalary.toFixed(2)}</b>
+          </p>
+          <p>
+            Lose(withoutLeaveSalary - monthIncome): <b style={{ color: "red" }}>{thisMonthSalary_subtract.toFixed(2)}</b>
+          </p>
+          <p>
+            Month Income (server): <b>{(monthIncome || 0).toFixed(2)}</b>
           </p>
         </div>
         {/* 🔹 Floating download button */}
