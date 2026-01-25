@@ -295,15 +295,46 @@ export default function MonthlySummary() {
             ) : (
               <>
                 <div className="edit-row vertical">
-                  <input type="number" value={teaInput} onChange={(e) => setTeaInput(Number(e.target.value) || 0)} placeholder="Tea" />
-                  <input type="number" value={waterInput} onChange={(e) => setWaterInput(Number(e.target.value) || 0)} placeholder="Water" />
-                  <div className="edit-actions">
-                    <button className="btn-primary" onClick={saveExpenses} disabled={savingExpenses}>
-                      {savingExpenses ? "Saving..." : "Save"}
-                    </button>
-                    <button className="btn-ghost" onClick={() => setEditExpenses(false)}>Cancel</button>
-                  </div>
-                </div>
+
+  <div className="field">
+    <label>Tea</label>
+    <input
+      type="number"
+      value={teaInput}
+      onChange={(e) => setTeaInput(Number(e.target.value) || 0)}
+      placeholder="Enter tea amount"
+    />
+  </div>
+
+  <div className="field">
+    <label>Water</label>
+    <input
+      type="number"
+      value={waterInput}
+      onChange={(e) => setWaterInput(Number(e.target.value) || 0)}
+      placeholder="Enter water amount"
+    />
+  </div>
+
+  <div className="edit-actions">
+    <button
+      className="btn-primary"
+      onClick={saveExpenses}
+      disabled={savingExpenses}
+    >
+      {savingExpenses ? "Saving..." : "Save"}
+    </button>
+
+    <button
+      className="btn-ghost"
+      onClick={() => setEditExpenses(false)}
+    >
+      Cancel
+    </button>
+  </div>
+
+</div>
+
               </>
             )}
 
