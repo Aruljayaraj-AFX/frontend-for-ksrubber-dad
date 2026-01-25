@@ -3,7 +3,6 @@ import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import "./Production.css";
 
-// Helper to get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -202,8 +201,8 @@ const payload = {
   ProductionCounts: selectedDies.map((id) => Number(productionCounts[id] || 0)),
   production_date: selectedDate,
   sub_flag: isHoliday ? 0 : 1,
-  tea : tea,
-  water: water
+  tea : 0,
+  water: 0
 };
   try {
     const res = await fetch(
@@ -316,25 +315,6 @@ const payload = {
               );
             })}
             <div>
-              <div className="production-input">
-                <label>tea</label>
-                <input
-                  type="number"
-                  placeholder="enter tea rupees"
-                  value={tea}
-                  onChange={(e) => settea(e.target.value)}
-                  />
-              </div>
-              
-              <div className="production-input">
-                <label>water</label>
-                <input
-                  type="number"
-                  placeholder="enter water rupees"
-                  value={water}
-                  onChange={(e)=>setwater(e.target.value)}
-                  />
-              </div>
             </div>
 
             <button
@@ -347,7 +327,6 @@ const payload = {
           </div>
         )}
 
-        {/* Results Section */}
         {result && (
           <div className="results-box">
             <h4>Production Results ({result.new_daily_pro.date})</h4>

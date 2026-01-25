@@ -1,19 +1,5 @@
 import { useEffect, useState } from "react";
 
-/**
- * MonthlySummary (refreshed design)
- *
- * - Keeps all original behavior (fetching daily-production, monthly-income, get-setting-income)
- * - Fetches month income when selectedMonth changes
- * - Preserves editing/saving for expenses and base income
- * - Enhanced UI:
- *   - Modern header with month selector
- *   - KPI cards with gradients, icons and micro progress bar for Loss ratio
- *   - Improved responsive layout and typography
- *   - Clear visual emphasis for monthIncome (green) and Loss (red)
- *
- * Drop-in replacement for your existing MonthlySummary component.
- */
 
 export default function MonthlySummary() {
   const [productions, setProductions] = useState([]);
@@ -137,7 +123,7 @@ export default function MonthlySummary() {
   const lossAmount = withoutLeaveSalary - (monthIncome || 0);
 
   const totalIncome =
-    settingIncome + totalMonthlyPay - teaInput - waterInput;
+    settingIncome + totalMonthlyPay ;
 
   const percentCovered = (() => {
     if (withoutLeaveSalary <= 0) return 0;
