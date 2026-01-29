@@ -11,7 +11,9 @@ export default function MonthlySummary() {
   );
 
   const [teaInput, setTeaInput] = useState(0);
+  const [teaInputc, setTeaInputc] = useState(0);
   const [waterInput, setWaterInput] = useState(0);
+  const [waterInputc, setWaterInputc] = useState(0);
 
   const [settingIncome, setSettingIncome] = useState(0);
   const [settingIncomeInput, setSettingIncomeInput] = useState(0);
@@ -137,16 +139,20 @@ export default function MonthlySummary() {
     try {
       setSavingExpenses(true);
 
-      await fetch(
+      const res = await fetch(  
         "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/current",
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tea: teaInput, water: waterInput }),
+          body: JSON.stringify({ tea: teaInputc, water: waterInputc}),
         }
       );
 
       setEditExpenses(false);
+      const data = await res.json();
+      setTeaInput(data.data.tea );
+      setWaterInput(data.data.water);
+      
     } catch (err) {
       console.error(err);
       setError("Failed to update expenses");
@@ -289,7 +295,7 @@ export default function MonthlySummary() {
                   <div>Water: <strong>{formatCurrency(waterInput)}</strong></div>
                 </div>
                 <div className="kpi-actions">
-                  <button className="btn-ghost" onClick={() => setEditExpenses(true)}>Edit</button>
+                  <button className="btn-ghost" onClick={() => setEditExpenses(true)}>Add</button>
                 </div>
               </>
             ) : (
@@ -300,9 +306,8 @@ export default function MonthlySummary() {
     <label>Tea</label>
     <input
       type="number"
-      value={teaInput}
-      onChange={(e) => setTeaInput(Number(e.target.value) || 0)}
       placeholder="Enter tea amount"
+      onChange={(e) => setTeaInputc(Number(e.target.value) || 0)}
     />
   </div>
 
@@ -310,9 +315,8 @@ export default function MonthlySummary() {
     <label>Water</label>
     <input
       type="number"
-      value={waterInput}
-      onChange={(e) => setWaterInput(Number(e.target.value) || 0)}
       placeholder="Enter water amount"
+      onChange={(e) => setWaterInputc(Number(e.target.value) || 0)}
     />
   </div>
 
