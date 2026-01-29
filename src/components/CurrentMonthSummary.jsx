@@ -307,6 +307,7 @@ export default function MonthlySummary() {
     <input
       type="number"
       placeholder="Enter tea amount"
+      defaultValue={0}
       onChange={(e) => setTeaInputc(Number(e.target.value) || 0)}
     />
   </div>
@@ -316,6 +317,7 @@ export default function MonthlySummary() {
     <input
       type="number"
       placeholder="Enter water amount"
+      defaultValue={0}
       onChange={(e) => setWaterInputc(Number(e.target.value) || 0)}
     />
   </div>
