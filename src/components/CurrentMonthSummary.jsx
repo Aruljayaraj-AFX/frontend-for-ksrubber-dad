@@ -161,6 +161,28 @@ export default function MonthlySummary() {
     }
   };
 
+  const resetWater = async () => {
+  try {
+    setSavingExpenses(true);
+
+    await fetch(
+      "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/water-reset",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    setWaterInput(0);
+
+  } catch (err) {
+    console.error(err);
+    setError("Failed to reset water");
+  } finally {
+    setSavingExpenses(false);
+  }
+};
+
   const saveBaseIncome = async () => {
     try {
       setSavingBaseIncome(true);
@@ -296,6 +318,39 @@ export default function MonthlySummary() {
                 </div>
                 <div className="kpi-actions">
                   <button className="btn-ghost" onClick={() => setEditExpenses(true)}>Add</button>
+                  <button
+  type="button"
+  onClick={resetWater}
+  disabled={savingExpenses}
+  style={{
+    marginTop: "8px",
+    padding: "6px 14px",
+    borderRadius: "6px",
+    border: "1px solid #ef4444",
+    backgroundColor: savingExpenses ? "#3f3f3f" : "transparent",
+    color: savingExpenses ? "#9ca3af" : "#ef4444",
+    fontSize: "12px",
+    fontWeight: 500,
+    cursor: savingExpenses ? "not-allowed" : "pointer",
+    transition: "all 0.2s ease",
+    height: "32px",
+    whiteSpace: "nowrap",
+  }}
+  onMouseEnter={(e) => {
+    if (!savingExpenses) {
+      e.target.style.backgroundColor = "#ef4444";
+      e.target.style.color = "#ffffff";
+    }
+  }}
+  onMouseLeave={(e) => {
+    if (!savingExpenses) {
+      e.target.style.backgroundColor = "transparent";
+      e.target.style.color = "#ef4444";
+    }
+  }}
+>
+  Reset
+</button>
                 </div>
               </>
             ) : (
@@ -307,20 +362,22 @@ export default function MonthlySummary() {
     <input
       type="number"
       placeholder="Enter tea amount"
-      defaultValue={0}
       onChange={(e) => setTeaInputc(Number(e.target.value) || 0)}
     />
   </div>
 
   <div className="field">
-    <label>Water</label>
+  <label>Water</label>
+
+  <div className="flex gap-2">
     <input
       type="number"
       placeholder="Enter water amount"
-      defaultValue={0}
       onChange={(e) => setWaterInputc(Number(e.target.value) || 0)}
     />
+
   </div>
+</div>
 
   <div className="edit-actions">
     <button
