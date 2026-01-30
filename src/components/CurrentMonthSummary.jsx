@@ -135,38 +135,52 @@ export default function MonthlySummary() {
   })();
 
   /* ---------------- SAVE HANDLERS ---------------- */
-  const saveExpenses = async () => {
-    try {
-      setSavingExpenses(true);
+  useEffect(() => {
+  if (!selectedMonth) return;
 
-      const res = await fetch(  
-        "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/current",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tea: teaInputc, water: waterInputc}),
-        }
+  const [yearStr, monthStr] = selectedMonth.split("-");
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+
+  const fetchExpenses = async () => {
+    try {
+      const res = await fetch(
+        `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/by-month?year=${year}&month=${month}`
       );
 
-      setEditExpenses(false);
+      if (!res.ok) {
+        setTeaInput(0);
+        setWaterInput(0);
+        return;
+      }
+
       const data = await res.json();
-      setTeaInput(data.data.tea );
-      setWaterInput(data.data.water);
-      
+
+      setTeaInput(data.data?.tea || 0);
+      setWaterInput(data.data?.water || 0);
+
     } catch (err) {
-      console.error(err);
-      setError("Failed to update expenses");
-    } finally {
-      setSavingExpenses(false);
+      console.error("Expense fetch failed", err);
+      setTeaInput(0);
+      setWaterInput(0);
     }
   };
 
-  const resetWater = async () => {
+  fetchExpenses();
+}, [selectedMonth]);
+
+const resetWater = async () => {
+  if (!selectedMonth) return;
+
   try {
     setSavingExpenses(true);
 
+    const [yearStr, monthStr] = selectedMonth.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+
     await fetch(
-      "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/water-reset",
+      `https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/water-reset?year=${year}&month=${month}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -183,7 +197,47 @@ export default function MonthlySummary() {
   }
 };
 
-  const saveBaseIncome = async () => {
+ const saveExpenses = async () => {
+  try {
+    setSavingExpenses(true);
+
+    const [yearStr, monthStr] = selectedMonth.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+
+    const res = await fetch(
+      "https://ksrubber-backend.vercel.app/afx/pro_ksrubber/v1/monthly-income/update",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year,
+          month,
+          tea: teaInputc || null,
+          water: waterInputc || null,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    setTeaInput(data.data.tea);
+    setWaterInput(data.data.water);
+
+    // ✅ IMPORTANT
+    setTeaInputc(0);
+    setWaterInputc(0);
+
+    setEditExpenses(false);
+
+  } catch (err) {
+    setError("Failed to update expenses");
+  } finally {
+    setSavingExpenses(false);
+  }
+};
+
+const saveBaseIncome = async () => {
     try {
       setSavingBaseIncome(true);
 
