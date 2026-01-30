@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
+import { toPng } from "html-to-image";
 
 
 export default function MonthlySummary() {
+  const exportRef = useRef(null);
   const [productions, setProductions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -237,6 +239,25 @@ const resetWater = async () => {
   }
 };
 
+const downloadPNG = async () => {
+  if (!exportRef.current) return;
+
+  try {
+    const dataUrl = await toPng(exportRef.current, {
+      cacheBust: true,
+      pixelRatio: 2,   // HD image
+      backgroundColor: "#ffffff"
+    });
+
+    const link = document.createElement("a");
+    link.download = `monthly-summary-${selectedMonth}.png`;
+    link.href = dataUrl;
+    link.click();
+  } catch (err) {
+    console.error("PNG export failed", err);
+  }
+}; 
+
 const saveBaseIncome = async () => {
     try {
       setSavingBaseIncome(true);
@@ -270,7 +291,7 @@ const saveBaseIncome = async () => {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="ms-root">
+    <div className="ms-root" ref={exportRef}>
       <header className="ms-header">
         <div className="ms-header-left">
           <div className="brand">
@@ -470,6 +491,21 @@ const saveBaseIncome = async () => {
               <div className="muted">Base: {formatCurrency(settingIncome)}  •  Overtime: {formatCurrency(totalMonthlyPay)}</div>
             </div>
           </div>
+          <div className="card loss-card">
+            <div className="card-header">
+              <h3>Loss / Shortfall</h3>
+              <span className="muted">Without-Leave - Month Income</span>
+            </div>
+            <div className="card-body">
+              <div className="big-money red">{formatCurrency(lossAmount)}</div>
+              <div className="muted">Positive = shortfall; Negative = surplus</div>
+
+              <div className="loss-details">
+                <div><strong>Tea</strong> {formatCurrency(teaInput)}</div>
+                <div><strong>Water</strong> {formatCurrency(waterInput)}</div>
+              </div>
+            </div>
+          </div>
 
           <div className="card right highlight-month">
             <div className="card-header">
@@ -492,33 +528,26 @@ const saveBaseIncome = async () => {
               </div>
             </div>
           </div>
-
-          <div className="card loss-card">
-            <div className="card-header">
-              <h3>Loss / Shortfall</h3>
-              <span className="muted">Without-Leave - Month Income</span>
-            </div>
-            <div className="card-body">
-              <div className="big-money red">{formatCurrency(lossAmount)}</div>
-              <div className="muted">Positive = shortfall; Negative = surplus</div>
-
-              <div className="loss-details">
-                <div><strong>Tea</strong> {formatCurrency(teaInput)}</div>
-                <div><strong>Water</strong> {formatCurrency(waterInput)}</div>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section className="final-row">
           <div className="left-info">
-            <h4>Net Total</h4>
-            <p className="muted">Base + Overtime Pay - Expenses</p>
-            <div className="final-money">{formatCurrency(totalIncome)}</div>
-          </div>
+  <h4>Total income</h4>
+
+  <div
+    className="final-money playwrite-no-guides-regular"
+    style={{
+      fontSize: "22px",
+      color: "#22c55e",
+      letterSpacing: "1px"
+    }}
+  >
+    {formatCurrency(monthIncome)}
+  </div>
+</div>
 
           <div className="actions">
-            <button className="btn-primary" onClick={() => window.print()}>Print / Export</button>
+            <button className="btn-primary" onClick={downloadPNG}>Export as PNG</button>
             <button className="btn-ghost" onClick={() => {
               // quick refresh
               setLoading(true);
