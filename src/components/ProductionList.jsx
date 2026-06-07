@@ -97,15 +97,48 @@ export default function DailyProductionTable() {
     });
 
     const finalY = doc.lastAutoTable?.finalY || 20;
+
     doc.setFontSize(10);
-    doc.text("📊 Summary", 14, finalY + 8);
-    doc.text(`• Total Overtime: ${totalOvertime}`, 14, finalY + 16);
-    doc.text(`• Total Overtime Pay: ${totalMonthyPay}`, 14, finalY + 24);
-    doc.text(`• Final Pay (+13,000): ${finalPay}`, 14, finalY + 32);
+    doc.text(
+      `Total Overtime (hours): ${totalOvertime}`,
+      14,
+      finalY + 5
+    );
+
+    doc.text(
+      `Total Overtime Pay: ${totalOvertimePay.toFixed(2)}`,
+      14,
+      finalY + 10
+    );
+
+    doc.text(
+      `Base Salary (from settings): ${baseSalary.toFixed(2)}`,
+      14,
+      finalY + 15
+    );
+
+    doc.text(
+      `Without Leave Salary (salary + overtime pay): ${withoutLeaveSalary.toFixed(2)}`,
+      14,
+      finalY + 20
+    );
+
+    doc.text(
+      `Lose (withoutLeaveSalary - monthIncome): ${thisMonthSalary_subtract.toFixed(2)}`,
+      14,
+      finalY + 25
+    );
+
+    doc.setTextColor(0, 128, 0); // Green
+
+    doc.text(
+      `Month Income (server): ${(monthIncome || 0).toFixed(2)}`,
+      14,
+      finalY + 30
+    );
 
     doc.save(`Daily_Production_${monthName}_${yearNum}.pdf`);
-  };
-
+  }
   // 🔹 Fetch productions
   const fetchProductions = async () => {
     try {
